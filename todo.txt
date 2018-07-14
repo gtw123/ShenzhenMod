@@ -1,0 +1,6 @@
+rename/doc FixTraceLoading methods
+doc earlier methods
+fix trace writing
+new puzzle
+new message thread
+test custom puzzles
