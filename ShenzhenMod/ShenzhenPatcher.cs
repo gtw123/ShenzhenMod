@@ -32,13 +32,13 @@ namespace ShenzhenMod
             ChangeMaxPuzzleSize();
             ChangeScrollSize();
             AddSizeToPuzzle();
-            FixTileGeneration();
-            FixTraceReading();
-            FixTraceWriting();
+            PatchTileCreation();
+            PatchTraceReading();
+            PatchTraceWriting();
         }
 
         /// <summary>
-        /// Patches the maximum puzzle size.
+        /// Changes the maximum puzzle size to a bigger size, to allow bigger puzzles.
         /// </summary>
         private void ChangeMaxPuzzleSize()
         {
@@ -48,7 +48,7 @@ namespace ShenzhenMod
         }
 
         /// <summary>
-        /// Patches the window size at which scrolling will be disabled. By default this
+        /// Changes the window size at which scrolling will be disabled. By default this
         /// is 1920x1080 because that's big enough for the largest built-in puzzles. We
         /// need to increase so we can have bigger puzzles. (Ideally we could find a way
         /// to make this be dynamically adjusted based on the current puzzle and the
@@ -147,7 +147,7 @@ namespace ShenzhenMod
         /// This allows us to add puzzles with custom sizes without needing to change the size of
         /// existing puzzles.
         /// </summary>
-        private void FixTileGeneration()
+        private void PatchTileCreation()
         {
             var method = m_module.FindMethod("#=qWo_Ilq5Sos4EQLLY_xDRAjAw6Q83Z6ZpjGeSwvBaB5U=", "#=qAmFcmFbUxPAB0DUb13KNOEmJgRvZSM6E$AgqIvIwrnk=");
             var il = method.Body.GetILProcessor();
@@ -165,7 +165,7 @@ namespace ShenzhenMod
         /// Patches the code that reads traces from a solution file so that it works if the
         /// puzzle has a smaller size than the max puzzle size.
         /// </summary>
-        private void FixTraceReading()
+        private void PatchTraceReading()
         {
             var method = m_module.FindMethod("Solution", "#=qMQ0eadM7OBun57pFLO1wWA==");
             var il = method.Body.GetILProcessor();
@@ -342,7 +342,7 @@ namespace ShenzhenMod
         /// default puzzles are written out the same way even after we've increased the maximum
         /// puzzle size.
         /// </summary>
-        private void FixTraceWriting()
+        private void PatchTraceWriting()
         {
             var method = m_module.FindMethod("Solution", "#=qRifLIKn3UtLp6BE8b6pMlSNVCWp8Sqx23hvNKjNJFiE=");
             var il = method.Body.GetILProcessor();
