@@ -1,7 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Security.Cryptography;
-using System.IO;
 using System.Linq;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
@@ -32,15 +29,18 @@ namespace ShenzhenMod
             }
         }
 
-        public void ApplyPatch()
+        public void ApplyPatches()
         {
             ChangeMaxPuzzleSize();
             ChangeScrollSize();
             AddSizeToPuzzle();
             FixTileGeneration();
-            FixTraceLoading();
+            FixTraceReading();
         }
 
+        /// <summary>
+        /// Patches the maximum puzzle size.
+        /// </summary>
         private void ChangeMaxPuzzleSize()
         {
             var method = m_module.FindMethod("#=qL_uhZp1CYmicXxDRy$c1Bw==", ".cctor");
@@ -48,6 +48,13 @@ namespace ShenzhenMod
             method.FindInstruction(OpCodes.Ldc_I4_S, (sbyte)14).Operand = (sbyte)28;
         }
 
+        /// <summary>
+        /// Patches the window size at which scrolling will be disabled. By default this
+        /// is 1920x1080 because that's big enough for the largest built-in puzzles. We
+        /// need to increase so we can have bigger puzzles. (Ideally we could find a way
+        /// to make this be dynamically adjusted based on the current puzzle and the
+        /// window size, but this is good enough for now.)
+        /// </summary>
         private void ChangeScrollSize()
         {
             var method = m_module.FindMethod("#=qL_uhZp1CYmicXxDRy$c1Bw==", "#=qOM$GUjkyhx7zr2YetMuA92qBxgTzT0XpP5Hho_r9c2A=");
@@ -55,6 +62,9 @@ namespace ShenzhenMod
             method.FindInstruction(OpCodes.Ldc_R4, 1080f).Operand = 2160f;
         }
 
+        /// <summary>
+        /// Adds fields to the Puzzle class of its actual size, and accessors for the puzzle size.
+        /// </summary>
         private void AddSizeToPuzzle()
         {
             var puzzleType = m_module.FindType("Puzzle");
@@ -122,7 +132,13 @@ namespace ShenzhenMod
                 return method;
             }
         }
-        
+
+        /// <summary>
+        /// Patches the code that populates the tiles of the circuit board from the puzzle definition
+        /// so that it uses the actual size of the puzzle rather than the maximum puzzle size.
+        /// This allows us to add puzzles with custom sizes without needing to change the size of
+        /// existing puzzles.
+        /// </summary>
         private void FixTileGeneration()
         {
             var method = m_module.FindMethod("#=qWo_Ilq5Sos4EQLLY_xDRAjAw6Q83Z6ZpjGeSwvBaB5U=", "#=qAmFcmFbUxPAB0DUb13KNOEmJgRvZSM6E$AgqIvIwrnk=");
@@ -137,21 +153,32 @@ namespace ShenzhenMod
             }
         }
 
-        private void FixTraceLoading()
+        /// <summary>
+        /// Patches the code that reads traces from a solution file so that it works if the
+        /// puzzle has a smaller size than the max puzzle size.
+        /// </summary>
+        private void FixTraceReading()
         {
             var method = m_module.FindMethod("Solution", "#=qMQ0eadM7OBun57pFLO1wWA==");
             var il = method.Body.GetILProcessor();
 
-            FixTraceLoading1();
-            FixTraceLoading2();
+            FixRowShuffling();
+            FixRowReading();
 
             // Fix up branches instructions that can no longer be "short" branches
             method.Body.SimplifyMacros();
             method.Body.OptimizeMacros();
 
-            void FixTraceLoading1()
+            // In memory, the traces are stored in reverse order to the solution file - i.e. row 0
+            // is actually at the bottom of the screen. This means that when the traces are read in
+            // from the solution file, they are inserted into the traces "grid" in reverse row order.
+            // If there are less rows in the solution file than the max puzzle height, the rows need
+            // to be shuffled down so that the last row is at index 0. By default, the code only
+            // handles this for 22x11 and 22x14. We patch it so that it works for any number of rows.
+            void FixRowShuffling()
             {
-                /*
+                /* Replace this:
+                 
 			        if (index == new Index2(0, 2))
 			        {
 				        for (int j = 0; j < 22; j++)
@@ -166,6 +193,8 @@ namespace ShenzhenMod
 					        }
 				        }
         			}
+
+                with this:
 
                     int lastY = index.Y;
                     if (lastY > 0)
@@ -228,12 +257,17 @@ namespace ShenzhenMod
                 // Replace "22" with "this.Traces.GetSize().X"
                 var instr2 = method.FindInstruction(OpCodes.Ldc_I4_S, (sbyte)22);
                 instr2.Set(OpCodes.Ldarg_0, null);
-                il.InsertAfter(instr2, il.Create(OpCodes.Ldfld, index2Type.Fields[1]));
-                il.InsertAfter(instr2, il.Create(OpCodes.Callvirt, m_module.FindMethod("#=qU2wvld4wYwd2RmifHjQEOQ==", "#=qa$TS_$HdBzzP07FjV63Yrw==")));
-                il.InsertAfter(instr2, il.Create(OpCodes.Ldfld, m_module.FindField("Solution", "#=qoToRfupqxh4PHUk11ckgIg==")));
+                instr2 = instr2.Next;
+                il.InsertBefore(instr2, il.Create(OpCodes.Ldfld, m_module.FindField("Solution", "#=qoToRfupqxh4PHUk11ckgIg==")));
+                il.InsertBefore(instr2, il.Create(OpCodes.Callvirt, m_module.FindMethod("#=qU2wvld4wYwd2RmifHjQEOQ==", "#=qa$TS_$HdBzzP07FjV63Yrw==")));
+                il.InsertBefore(instr2, il.Create(OpCodes.Ldfld, index2Type.Fields[1]));
             }
 
-            void FixTraceLoading2()
+            // By default, the trace reading code assumes the width of the traces in the solution file
+            // is the same as the max puzzle width. We change it so that it uses the width of the rows
+            // in the solution file instead. This allows it to correctly read (say) a 22x14 solution
+            // if the max puzzle size is bigger than 22x14.
+            void FixRowReading()
             {
                 /* Replace this:
 

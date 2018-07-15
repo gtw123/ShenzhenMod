@@ -28,7 +28,7 @@ namespace ShenzhenMod
 
             using (var patcher = new ShenzhenPatcher(exePath))
             {
-                patcher.ApplyPatch();
+                patcher.ApplyPatches();
 
                 string targetPath = Path.Combine(m_shenzhenDir, "Shenzhen.exe");
                 if (File.Exists(targetPath))
