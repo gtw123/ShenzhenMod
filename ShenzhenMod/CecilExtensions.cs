@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
+using Mono.Cecil.Rocks;
 
 namespace ShenzhenMod
 {
@@ -10,7 +11,11 @@ namespace ShenzhenMod
     {
         public static FieldDefinition FindField(this ModuleDefinition module, string typeName, string fieldName)
         {
-            var type = module.FindType(typeName);
+            return module.FindType(typeName).FindField(fieldName);
+        }
+
+        public static FieldDefinition FindField(this TypeDefinition type, string fieldName)
+        {
             return type.Fields.SingleOrDefault(m => m.Name == fieldName) ?? throw new Exception($"Cannot find field \"{fieldName}\" in type \"{type.Name}\"");
         }
 
@@ -79,6 +84,28 @@ namespace ShenzhenMod
             }
 
             return instr.First();
+        }
+
+        public static MethodReference MakeGeneric(this MethodReference method, params TypeReference[] arguments)
+        {
+            var reference = new MethodReference(method.Name, method.ReturnType, method.DeclaringType.MakeGenericInstanceType(arguments))
+            {
+                HasThis = method.HasThis,
+                ExplicitThis = method.ExplicitThis,
+                CallingConvention = method.CallingConvention
+            };
+
+            foreach (var parameter in method.Parameters)
+            {
+                reference.Parameters.Add(new ParameterDefinition(parameter.ParameterType));
+            }
+
+            foreach (var genericParameter in method.GenericParameters)
+            {
+                reference.GenericParameters.Add(new GenericParameter(genericParameter.Name, reference));
+            }
+
+            return reference;
         }
 
         public static bool Matches(this Instruction instruction, OpCode opCode, object operand)

@@ -36,6 +36,7 @@ namespace ShenzhenMod
             AddSizeToPuzzle();
             FixTileGeneration();
             FixTraceReading();
+            FixTraceWriting();
         }
 
         /// <summary>
@@ -274,7 +275,7 @@ namespace ShenzhenMod
                     if (flag)
                     {
                         index2.x++;
-                        if (index2.x >= this.gclass108_0.method_0().x)
+                        if (index2.x >= this.Traces.GetSize().x)
                         {
                             index2.x = 0;
                             index2.y--;
@@ -323,6 +324,85 @@ namespace ShenzhenMod
                 // If the if before "if (flag)" is false, jump to our new '\n' check
                 method.FindInstructionAtOffset(0x044b, OpCodes.Brfalse_S, ifFlag).Operand = checkNewLine;
             }
+        }
+
+        /// <summary>
+        /// Patches the code that writes traces to a solution file so that it uses the size of
+        /// the puzzle rather than the maximum puzzle size. This ensures that solutions for
+        /// default puzzles are written out the same way even after we've increased the maximum
+        /// puzzle size.
+        /// </summary>
+        private void FixTraceWriting()
+        {
+            var method = m_module.FindMethod("Solution", "#=qRifLIKn3UtLp6BE8b6pMlSNVCWp8Sqx23hvNKjNJFiE=");
+            var il = method.Body.GetILProcessor();
+
+            /* Replace this:
+
+                for (int i = this.Traces.GetSize().Y - 1; i >= 0; i--)
+                {
+                    for (int j = 0; j < this.Traces.GetSize().X; j++)
+
+            with this:
+
+                Index2 size = this.Traces.GetSize();
+                Optional<Puzzle> puzzle = Puzzles.FindPuzzle(this.PuzzleName);
+                if (puzzle.HasValue())
+                {
+                    size = puzzle.Value().GetSize();
+                }
+                for (int i = size.int_1 - 1; i >= 0; i--)
+                {
+                    for (int j = 0; j < size.int_0; j++)
+
+            */
+
+            var index2Type = m_module.FindType("Index2");
+            var solutionType = m_module.FindType("Solution");
+            var puzzleType = m_module.FindType("Puzzle");
+            var optionalType = m_module.FindType("#=qR8Z5w5CojvJHXAww9GCK5A==");
+
+            // Add two new variables
+            var size = new VariableDefinition(index2Type);
+            method.Body.Variables.Add(size);
+            var puzzle = new VariableDefinition(optionalType.MakeGenericInstanceType(puzzleType));
+            method.Body.Variables.Add(puzzle);
+
+            var loopStart = method.FindInstructionAtOffset(0x0010, OpCodes.Ldarg_0, null);
+
+            // size = this.Traces.GetSize();
+            il.InsertBefore(loopStart, il.Create(OpCodes.Ldarg_0));
+            il.InsertBefore(loopStart, il.Create(OpCodes.Ldfld, solutionType.FindField("#=qoToRfupqxh4PHUk11ckgIg==")));
+            il.InsertBefore(loopStart, il.Create(OpCodes.Callvirt, m_module.FindMethod("#=qU2wvld4wYwd2RmifHjQEOQ==", "#=qa$TS_$HdBzzP07FjV63Yrw==")));
+            il.InsertBefore(loopStart, il.Create(OpCodes.Stloc_S, size));
+
+            // Optional<Puzzle> puzzle = Puzzles.FindPuzzle(this.PuzzleName);
+            il.InsertBefore(loopStart, il.Create(OpCodes.Ldarg_0));
+            il.InsertBefore(loopStart, il.Create(OpCodes.Ldfld, solutionType.FindField("#=qTXd1K2Ra91bQy9H0YYRImQ==")));
+            il.InsertBefore(loopStart, il.Create(OpCodes.Call, m_module.FindMethod("Puzzles", "#=q3A2LvmLiLWo2_KzmaD5ILQ==")));
+            il.InsertBefore(loopStart, il.Create(OpCodes.Stloc_S, puzzle));
+
+            // if (puzzle.HasValue())
+            il.InsertBefore(loopStart, il.Create(OpCodes.Ldloca_S, puzzle));
+            il.InsertBefore(loopStart, il.Create(OpCodes.Call, optionalType.FindMethod("#=qmSp1X_ZAgy45Ga5$UXTJWQ==").MakeGeneric(puzzleType)));
+            il.InsertBefore(loopStart, il.Create(OpCodes.Brfalse_S, loopStart));
+
+            // size = puzzle.Value().GetSize();
+            il.InsertBefore(loopStart, il.Create(OpCodes.Ldloca_S, puzzle));
+            il.InsertBefore(loopStart, il.Create(OpCodes.Call, optionalType.FindMethod("#=q5w1mvb6GQzXlvbmLqUxfcg==").MakeGeneric(puzzleType)));
+            il.InsertBefore(loopStart, il.Create(OpCodes.Call, m_puzzleGetSize));
+            il.InsertBefore(loopStart, il.Create(OpCodes.Stloc_S, size));
+            
+            // Replace "this.Traces.GetSize()" with "size" in the first loop
+            loopStart.Set(OpCodes.Ldloc_S, size);
+            il.Remove(loopStart.Next);
+            il.Remove(loopStart.Next);
+
+            // Replace "this.Traces.GetSize()" with "size" in the second loop
+            var loop2Condition = method.FindInstructionAtOffset(0x005C, OpCodes.Ldarg_0, null);
+            loop2Condition.Set(OpCodes.Ldloc_S, size);
+            il.Remove(loop2Condition.Next);
+            il.Remove(loop2Condition.Next);
         }
 
         public void SavePatchedFile(string targetFile)
