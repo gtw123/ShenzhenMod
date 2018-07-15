@@ -1,6 +1,5 @@
-rename/doc FixTraceLoading methods
-doc earlier methods
-fix trace writing
-new puzzle
-new message thread
+add puzzle rather than replacing spam message?
+copy in text files
+customize message
+user better puzzle name?
 test custom puzzles
