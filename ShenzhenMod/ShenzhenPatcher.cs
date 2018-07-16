@@ -573,15 +573,15 @@ namespace ShenzhenMod
                 il.Create(OpCodes.Call, m_module.ImportReference(typeof(Array).GetMethod("Copy", new[] { typeof(Array), typeof(int), typeof(Array), typeof(int), typeof(int) }))));
 
             // Now create our new message thread
-            // messageThreads[INSERT_INDEX] = CreateMessageThread((Location)0 /* Longteng Co. Ltd. */, /* stage unlocked at */ 6, "prototyping-area2", Puzzles.Sandbox2, L.GetString("Prototyping area2", ""), (Enum2)2, 4, null);
+            // messageThreads[INSERT_INDEX] = CreateMessageThread((Location)0 /* Longteng Co. Ltd. */, /* stage unlocked at */ 6, "bigger-prototyping-area", Puzzles.Sandbox2, L.GetString("Bigger Prototyping Area", ""), (Enum2)2, 4, null);
             il.InsertBefore(endThreads,
                 il.Create(OpCodes.Ldsfld, messageThreadsField),
                 il.Create(OpCodes.Ldc_I4_S, (sbyte)INSERT_INDEX),
                 il.Create(OpCodes.Ldc_I4_0),
                 il.Create(OpCodes.Ldc_I4_6),
-                il.Create(OpCodes.Ldstr, "prototyping-area2"),
+                il.Create(OpCodes.Ldstr, "bigger-prototyping-area"),    // Name of the messages file containing the email thread (also used to name the solution files on disk)
                 il.Create(OpCodes.Ldsfld, m_module.FindField("Puzzles", "Sandbox2")),
-                il.Create(OpCodes.Ldstr, "Prototyping area2"),
+                il.Create(OpCodes.Ldstr, "Bigger Prototyping Area"),    // Name of the puzzle shown in the game
                 il.Create(OpCodes.Ldstr, ""),
                 il.Create(OpCodes.Call, m_module.FindMethod("L", "#=qAr$2Ue4QaJr84iXEbxBSkQ==")),
                 il.Create(OpCodes.Ldc_I4_2),

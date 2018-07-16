@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Globalization;
 using System.IO;
+using System.Reflection;
 
 namespace ShenzhenMod
 {
@@ -41,6 +42,23 @@ namespace ShenzhenMod
                 }
 
                 patcher.SavePatchedFile(targetPath);
+            }
+
+            CopyContent();
+        }
+
+        private void CopyContent()
+        {
+            using (var stream = Assembly.GetCallingAssembly().GetManifestResourceStream("ShenzhenMod.Content.messages.en.bigger-prototyping-area.txt"))
+            {
+                string path = Path.Combine(m_shenzhenDir, @"Content\messages.en\bigger-prototyping-area.txt");
+                using (var file = File.Create(path))
+                {
+                    stream.CopyTo(file);
+                }
+
+                // Although we haven't got a Chinese version, we need to have a corresponding file in messages.zh to avoid a crash.
+                File.Copy(path, Path.Combine(m_shenzhenDir, @"Content\messages.zh\bigger-prototyping-area.txt"), overwrite: true);
             }
         }
     }

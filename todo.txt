@@ -1,4 +1,4 @@
-copy in text files
-customize message
-use better puzzle name?
+Add logging to installer
+Use local time
+Finish GUI
 test custom puzzles
