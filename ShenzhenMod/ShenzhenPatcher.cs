@@ -553,12 +553,30 @@ namespace ShenzhenMod
             var method = messageThreadsType.FindMethod("#=qwjQuuxUKAcc2rhJ2_3COeg==");
             var il = method.Body.GetILProcessor();
 
+            // Increase the length of the messageThreads array by one
+            const int NUM_THREADS = 76;
+            method.FindInstruction(OpCodes.Ldc_I4_S, (sbyte)NUM_THREADS).Operand = (sbyte)(NUM_THREADS + 1);
+
+            // We want to insert our new puzzle just after the existing sandbox, so shuffle the
+            // later message threads forward by one.
+            const int INSERT_INDEX = 18;
+            var messageThreadsField = messageThreadsType.FindField("#=qmBNhv6t$m9ggiyIoqso9Ug==");
             var endThreads = method.FindInstructionAtOffset(0x0e95, OpCodes.Call, messageThreadsType.FindMethod("#=qaIFdKxRWR2y8tIK$6OrYcBQLWhmFTT0LwFP$IOxB9$A="));
 
-            // messageThreads[18] = CreateMessageThread((Enum1)0, 6, "prototyping-area", Puzzles.Sandbox2, L.GetString("Prototyping area", ""), (Enum2)2, 4, null);
+            // Array.Copy(messageThreadsField, INSERT_INDEX, messageThreadsField, INSERT_INDEX + 1, NUM_THREADS - INSERT_INDEX);
             il.InsertBefore(endThreads,
-                il.Create(OpCodes.Ldsfld, messageThreadsType.FindField("#=qmBNhv6t$m9ggiyIoqso9Ug==")),
-                il.Create(OpCodes.Ldc_I4_S, (sbyte)18),
+                il.Create(OpCodes.Ldsfld, messageThreadsField),
+                il.Create(OpCodes.Ldc_I4_S, (sbyte)INSERT_INDEX),
+                il.Create(OpCodes.Ldsfld, messageThreadsField),
+                il.Create(OpCodes.Ldc_I4_S, (sbyte)(INSERT_INDEX + 1)),
+                il.Create(OpCodes.Ldc_I4_S, (sbyte)(NUM_THREADS - INSERT_INDEX)),
+                il.Create(OpCodes.Call, m_module.ImportReference(typeof(Array).GetMethod("Copy", new[] { typeof(Array), typeof(int), typeof(Array), typeof(int), typeof(int) }))));
+
+            // Now create our new message thread
+            // messageThreads[INSERT_INDEX] = CreateMessageThread((Location)0 /* Longteng Co. Ltd. */, /* stage unlocked at */ 6, "prototyping-area2", Puzzles.Sandbox2, L.GetString("Prototyping area2", ""), (Enum2)2, 4, null);
+            il.InsertBefore(endThreads,
+                il.Create(OpCodes.Ldsfld, messageThreadsField),
+                il.Create(OpCodes.Ldc_I4_S, (sbyte)INSERT_INDEX),
                 il.Create(OpCodes.Ldc_I4_0),
                 il.Create(OpCodes.Ldc_I4_6),
                 il.Create(OpCodes.Ldstr, "prototyping-area2"),

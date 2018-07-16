@@ -1,5 +1,4 @@
-add puzzle rather than replacing spam message?
 copy in text files
 customize message
-user better puzzle name?
+use better puzzle name?
 test custom puzzles
