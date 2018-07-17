@@ -1,5 +1,4 @@
 Add logging to installer
 Save patched exe to temp, then swap
-Use local time
 Store dir as setting
-Doc Instller
+Doc Installer

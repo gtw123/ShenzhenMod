@@ -36,7 +36,7 @@ namespace ShenzhenMod
                 if (File.Exists(targetPath))
                 {
                     // Rename the existing Shenzhen.exe before overwriting it, in case the user wants to roll back
-                    string timestamp = DateTime.Now.ToString("yyyyMMdd-hhmmss", CultureInfo.InvariantCulture);
+                    string timestamp = DateTime.Now.ToString("yyyyMMdd-HHmmss", CultureInfo.InvariantCulture);
                     string backupPath = Path.Combine(m_shenzhenDir, Invariant($"Shenzhen.{timestamp}.exe"));
                     sm_log.InfoFormat("Moving \"{0}\" to \"{1}\"", targetPath, backupPath);
                     File.Move(targetPath, backupPath);
