@@ -2,6 +2,7 @@
 using System.Globalization;
 using System.IO;
 using System.Reflection;
+using static System.FormattableString;
 
 namespace ShenzhenMod
 {
@@ -36,7 +37,7 @@ namespace ShenzhenMod
                 {
                     // Rename the existing Shenzhen.exe before overwriting it, in case the user wants to roll back
                     string timestamp = DateTime.Now.ToString("yyyyMMdd-hhmmss", CultureInfo.InvariantCulture);
-                    string backupPath = Path.Combine(m_shenzhenDir, $"Shenzhen.{timestamp}.exe");
+                    string backupPath = Path.Combine(m_shenzhenDir, Invariant($"Shenzhen.{timestamp}.exe"));
                     sm_log.InfoFormat("Moving \"{0}\" to \"{1}\"", targetPath, backupPath);
                     File.Move(targetPath, backupPath);
                 }

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Security.Cryptography;
 using System.IO;
 using Microsoft.Win32;
+using static System.FormattableString;
 
 namespace ShenzhenMod
 {
@@ -24,7 +25,7 @@ namespace ShenzhenMod
                 }
                 else
                 {
-                    sm_log.InfoFormat("Could not find SHENZHEN I/O directory: directory \"{0}\" does not exist", shenzhenDir);
+                    sm_log.WarnFormat("Could not find SHENZHEN I/O directory: directory \"{0}\" does not exist", shenzhenDir);
                 }
             }
 
@@ -38,7 +39,7 @@ namespace ShenzhenMod
             string path = FindExecutableWithHash(shenzhenDir, unpatchedHash);
             if (path == null)
             {
-                throw new Exception(String.Format("Cannot locate unpatched SHENZHEN I/O executable in \"{0}\"", shenzhenDir));
+                throw new Exception(Invariant($"Cannot locate unpatched SHENZHEN I/O executable in \"{shenzhenDir}\""));
             }
 
             sm_log.InfoFormat("Found unpatched SHENZHEN I/O executable: \"{0}\"", path);
@@ -59,7 +60,7 @@ namespace ShenzhenMod
                 }
                 catch (Exception e)
                 {
-                    sm_log.InfoFormat("Error calculating hash for file \"{0}\": {1}", file, e.Message);
+                    sm_log.ErrorFormat("Error calculating hash for file \"{0}\": {1}", file, e.Message);
                 }
             }
 

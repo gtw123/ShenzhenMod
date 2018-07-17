@@ -4,6 +4,7 @@ using System.Linq;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
 using Mono.Cecil.Rocks;
+using static System.FormattableString;
 
 namespace ShenzhenMod
 {
@@ -16,7 +17,7 @@ namespace ShenzhenMod
 
         public static FieldDefinition FindField(this TypeDefinition type, string fieldName)
         {
-            return type.Fields.SingleOrDefault(m => m.Name == fieldName) ?? throw new Exception($"Cannot find field \"{fieldName}\" in type \"{type.Name}\"");
+            return type.Fields.SingleOrDefault(m => m.Name == fieldName) ?? throw new Exception(Invariant($"Cannot find field \"{fieldName}\" in type \"{type.Name}\""));
         }
 
         public static MethodDefinition FindMethod(this ModuleDefinition module, string typeName, string methodName)
@@ -29,11 +30,11 @@ namespace ShenzhenMod
             var method = type.Methods.Where(m => m.Name == methodName);
             if (method.Count() == 0)
             {
-                throw new Exception($"Cannot find method \"{methodName}\" in type \"{type.Name}\"");
+                throw new Exception(Invariant($"Cannot find method \"{methodName}\" in type \"{type.Name}\""));
             }
             else if (method.Count() > 1)
             {
-                throw new Exception($"Found more than one method called \"{methodName}\" in type \"{type.Name}\"");
+                throw new Exception(Invariant($"Found more than one method called \"{methodName}\" in type \"{type.Name}\""));
             }
 
             return method.First();
@@ -41,15 +42,15 @@ namespace ShenzhenMod
 
         public static TypeDefinition FindType(this ModuleDefinition module, string name)
         {
-            return module.GetType(name) ?? throw new Exception($"Cannot find type \"{name}\"");
+            return module.GetType(name) ?? throw new Exception(Invariant($"Cannot find type \"{name}\""));
         }
 
         public static Instruction FindInstructionAtOffset(this MethodDefinition method, int offset, OpCode opCode, object operand)
         {
-            var instr = method.Body.Instructions.SingleOrDefault(i => i.Offset == offset) ?? throw new Exception($"Cannot find instruction at offset IL_{offset:X4} in method \"{method.Name}\"");
+            var instr = method.Body.Instructions.SingleOrDefault(i => i.Offset == offset) ?? throw new Exception(Invariant($"Cannot find instruction at offset IL_{offset:X4} in method \"{method.Name}\""));
             if (!instr.Matches(opCode, operand))
             {
-                throw new Exception($"Instruction at offset IL_{offset:X4} in method \"{method.Name}\" does not match OpCode \"{opCode}\" and operand \"{operand}\"");
+                throw new Exception(Invariant($"Instruction at offset IL_{offset:X4} in method \"{method.Name}\" does not match OpCode \"{opCode}\" and operand \"{operand}\""));
             }
 
             return instr;
@@ -60,7 +61,7 @@ namespace ShenzhenMod
             var instr = FindInstructions(method, opCode, operand);
             if (instr.Count() != numExpected)
             {
-                throw new Exception($"Expected to find {numExpected} instructions with OpCode \"{opCode}\" and operand \"{operand}\" in method \"{method.Name}\", but found {instr.Count()}");
+                throw new Exception(Invariant($"Expected to find {numExpected} instructions with OpCode \"{opCode}\" and operand \"{operand}\" in method \"{method.Name}\", but found {instr.Count()}"));
             }
 
             return instr;
@@ -76,11 +77,11 @@ namespace ShenzhenMod
             var instr = FindInstructions(method, opCode, operand);
             if (instr.Count() == 0)
             {
-                throw new Exception($"Cannot find instruction with OpCode \"{opCode}\" and operand \"{operand}\" in method \"{method.Name}\"");
+                throw new Exception(Invariant($"Cannot find instruction with OpCode \"{opCode}\" and operand \"{operand}\" in method \"{method.Name}\""));
             }
             else if (instr.Count() > 1)
             {
-                throw new Exception($"Found more than one instruction with OpCode \"{opCode}\" and operand \"{operand}\" in method \"{method.Name}\"");
+                throw new Exception(Invariant($"Found more than one instruction with OpCode \"{opCode}\" and operand \"{operand}\" in method \"{method.Name}\""));
             }
 
             return instr.First();
