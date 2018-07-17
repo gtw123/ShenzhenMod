@@ -38,7 +38,7 @@ namespace ShenzhenMod
             string path = FindExecutableWithHash(shenzhenDir, unpatchedHash);
             if (path == null)
             {
-                throw new Exception("Cannot locate unpatched SHENZHEN I/O executable");
+                throw new Exception(String.Format("Cannot locate unpatched SHENZHEN I/O executable in \"{0}\"", shenzhenDir));
             }
 
             sm_log.InfoFormat("Found unpatched SHENZHEN I/O executable: \"{0}\"", path);
