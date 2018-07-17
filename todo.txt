@@ -1,4 +1,3 @@
 Add logging to installer
 Use local time
 Finish GUI
-test custom puzzles

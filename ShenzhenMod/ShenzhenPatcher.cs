@@ -29,20 +29,21 @@ namespace ShenzhenMod
 
         public void ApplyPatches()
         {
-            ChangeMaxPuzzleSize();
+            ChangeMaxBoardSize();
             ChangeScrollSize();
             AddSizeToPuzzle();
             PatchTileCreation();
             PatchTraceReading();
             PatchTraceWriting();
+            PatchCustomPuzzleReading();
             AddSandbox2Puzzle();
             AddSandbox2MessageThread();
         }
 
         /// <summary>
-        /// Changes the maximum puzzle size to a bigger size, to allow bigger puzzles.
+        /// Changes the maximum circuit board size to a bigger size, to allow bigger puzzles.
         /// </summary>
-        private void ChangeMaxPuzzleSize()
+        private void ChangeMaxBoardSize()
         {
             var method = m_module.FindMethod("#=qL_uhZp1CYmicXxDRy$c1Bw==", ".cctor");
             method.FindInstruction(OpCodes.Ldc_I4_S, (sbyte)22).Operand = (sbyte)44;
@@ -64,7 +65,7 @@ namespace ShenzhenMod
         }
 
         /// <summary>
-        /// Adds fields to the Puzzle class to store its actual size, and accessors for the puzzle size.
+        /// Adds fields to the Puzzle class to store its actual board size, and accessors for the board size.
         /// </summary>
         private void AddSizeToPuzzle()
         {
@@ -99,7 +100,7 @@ namespace ShenzhenMod
             }
 
             // Adds GetSize() to the Puzzle class.
-            // This returns the size of the puzzle if it has been set via SetSize(), and
+            // This returns the size of the board if it has been set via SetSize(), and
             // defaults to (22, 14) if not. This is to avoid having to update all the existing
             // puzzles to set their size.
             void AddGetSize()
@@ -131,8 +132,8 @@ namespace ShenzhenMod
 
         /// <summary>
         /// Patches the code that populates the tiles of the circuit board from the puzzle definition
-        /// so that it uses the actual size of the puzzle rather than the maximum puzzle size.
-        /// This allows us to add puzzles with custom sizes without needing to change the size of
+        /// so that it uses the actual board size of the puzzle rather than the maximum board size.
+        /// This allows us to add puzzles with custom board sizes without needing to change the size of
         /// existing puzzles.
         /// </summary>
         private void PatchTileCreation()
@@ -151,7 +152,7 @@ namespace ShenzhenMod
 
         /// <summary>
         /// Patches the code that reads traces from a solution file so that it works if the
-        /// puzzle has a smaller size than the max puzzle size.
+        /// puzzle has a smaller board size than the maximum board size.
         /// </summary>
         private void PatchTraceReading()
         {
@@ -262,9 +263,9 @@ namespace ShenzhenMod
             }
 
             // By default, the trace reading code assumes the width of the traces in the solution file
-            // is the same as the max puzzle width. We change it so that it uses the width of the rows
+            // is the same as the max board width. We change it so that it uses the width of the rows
             // in the solution file instead. This allows it to correctly read (say) a 22x14 solution
-            // if the max puzzle size is bigger than 22x14.
+            // if the max board size is bigger than 22x14.
             void FixRowReading()
             {
                 /* Replace this:
@@ -325,10 +326,10 @@ namespace ShenzhenMod
         }
 
         /// <summary>
-        /// Patches the code that writes traces to a solution file so that it uses the size of
-        /// the puzzle rather than the maximum puzzle size. This ensures that solutions for
+        /// Patches the code that writes traces to a solution file so that it uses the board size of
+        /// the puzzle rather than the maximum board size. This ensures that solutions for
         /// default puzzles are written out the same way even after we've increased the maximum
-        /// puzzle size.
+        /// board size.
         /// </summary>
         private void PatchTraceWriting()
         {
@@ -402,6 +403,25 @@ namespace ShenzhenMod
             loop2Condition.Set(OpCodes.Ldloc_S, size);
             il.Remove(loop2Condition.Next);
             il.Remove(loop2Condition.Next);
+        }
+
+        /// <summary>
+        /// Patches the code that reads a custom puzzle definition so that it uses the correct board size.
+        /// </summary>
+        private void PatchCustomPuzzleReading()
+        {
+            var method = m_module.FindMethod("CustomLevelCompiler", "#=qNa$RXaj4bc8c30RVXeX5uQ==");
+            var il = method.Body.GetILProcessor();
+
+            // Change the code that gets the max board size to instead use the default board size of 22x14.
+            // Technically custom puzzles are always 18x7, but to avoid changing the file format of existing
+            // solutions we use the old default of 22x14 instead.
+            var instrs = method.FindInstructions(OpCodes.Ldsfld, m_module.FindField("#=qL_uhZp1CYmicXxDRy$c1Bw==", "#=qAVzUnhNiHUMBOnnky4iCCA=="), 2).ToList();
+            instrs[0].Set(OpCodes.Ldc_I4_S, (sbyte)22);
+            il.Remove(instrs[0].Next);
+
+            instrs[1].Set(OpCodes.Ldc_I4_S, (sbyte)14);
+            il.Remove(instrs[1].Next);
         }
 
         /// <summary>
