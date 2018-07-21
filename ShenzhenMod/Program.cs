@@ -15,6 +15,7 @@ namespace ShenzhenMod
         [STAThread]
         static void Main()
         {
+            sm_log.Info("---------------------------------------------------------------------------------------");
             sm_log.Info("Starting up");
 
             Application.EnableVisualStyles();

@@ -616,6 +616,7 @@ namespace ShenzhenMod
         /// </summary>
         public void SavePatchedFile(string targetFile)
         {
+            sm_log.InfoFormat("Saving patched file to \"{0}\"", targetFile);
             m_module.Write(targetFile);
         }
     }

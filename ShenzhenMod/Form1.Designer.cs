@@ -72,7 +72,7 @@
             this.m_installButton.TabIndex = 1;
             this.m_installButton.Text = "Install";
             this.m_installButton.UseVisualStyleBackColor = true;
-            this.m_installButton.Click += new System.EventHandler(this.PatchButtonClick);
+            this.m_installButton.Click += new System.EventHandler(this.InstallButtonClick);
             // 
             // label1
             // 
@@ -158,6 +158,8 @@
             this.Controls.Add(this.m_installButton);
             this.Controls.Add(this.m_browseButton);
             this.Controls.Add(this.m_exeFolderField);
+            this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedSingle;
+            this.MaximizeBox = false;
             this.Name = "Form1";
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
             this.Text = "SheznhenMod Installer";

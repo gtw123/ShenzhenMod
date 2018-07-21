@@ -29,12 +29,15 @@ namespace ShenzhenMod
             }
         }
 
-        private void PatchButtonClick(object sender, System.EventArgs e)
+        private void InstallButtonClick(object sender, System.EventArgs e)
         {
             try
             {
                 string shenzhenDir = m_exeFolderField.Text;
+                sm_log.InfoFormat("Installing to \"{0}\"", shenzhenDir);
                 new Installer(shenzhenDir).Install();
+
+                sm_log.Info("Installation complete");
                 MessageBox.Show(this, "Installation complete!");
                 Application.Exit();
             }

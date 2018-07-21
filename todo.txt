@@ -1,4 +1,0 @@
-Add logging to installer
-Save patched exe to temp, then swap
-Store dir as setting
-Doc Installer
