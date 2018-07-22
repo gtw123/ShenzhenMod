@@ -1,4 +1,5 @@
 ﻿using System;
+using System.IO;
 using System.Linq;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
@@ -13,17 +14,21 @@ namespace ShenzhenMod.Patches
         private static readonly log4net.ILog sm_log = log4net.LogManager.GetLogger(typeof(AddBiggerSandbox));
 
         private ModuleDefinition m_module;
+        private string m_shenzhenDir;
 
-        public AddBiggerSandbox(ModuleDefinition module)
+        public AddBiggerSandbox(ModuleDefinition module, string shenzhenDir)
         {
             m_module = module;
+            m_shenzhenDir = shenzhenDir;
         }
 
         public void Apply()
         {
             sm_log.Info("Applying patch");
+
             AddSandbox2Puzzle();
             AddSandbox2MessageThread();
+            CopyMessagesFile();
         }
 
         /// <summary>
@@ -211,6 +216,24 @@ namespace ShenzhenMod.Patches
                 il.Create(OpCodes.Ldnull),
                 il.Create(OpCodes.Call, messageThreadsType.FindMethod("#=qfUbtIkU$VEWeJDUjSUPeyd54W9YJOUkOnvfvmUQDBmA=")),
                 il.Create(OpCodes.Stelem_Ref));
+        }
+
+        private void CopyMessagesFile()
+        {
+            using (var stream = System.Reflection.Assembly.GetCallingAssembly().GetManifestResourceStream("ShenzhenMod.Content.messages.en.bigger-prototyping-area.txt"))
+            {
+                string path = Path.Combine(m_shenzhenDir, @"Content\messages.en\bigger-prototyping-area.txt");
+                using (var file = File.Create(path))
+                {
+                    sm_log.InfoFormat("Writing resource file to \"{0}\"", path);
+                    stream.CopyTo(file);
+                }
+
+                // Although we haven't got a Chinese version, we need to have a corresponding file in messages.zh to avoid a crash.
+                string path2 = Path.Combine(m_shenzhenDir, @"Content\messages.zh\bigger-prototyping-area.txt");
+                sm_log.InfoFormat("Copying \"{0}\" to \"{1}\"", path, path2);
+                File.Copy(path, path2, overwrite: true);
+            }
         }
     }
 }

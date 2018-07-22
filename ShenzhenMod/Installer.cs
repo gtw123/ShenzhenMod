@@ -1,7 +1,8 @@
 ﻿using System;
 using System.Globalization;
 using System.IO;
-using System.Reflection;
+using Mono.Cecil;
+using ShenzhenMod.Patches;
 using static System.FormattableString;
 
 namespace ShenzhenMod
@@ -36,12 +37,7 @@ namespace ShenzhenMod
                 File.Delete(patchedPath);
             }
 
-            sm_log.Info("Patching executable");
-            using (var patcher = new ShenzhenPatcher(exePath))
-            {
-                patcher.ApplyPatches();
-                patcher.SavePatchedFile(patchedPath);
-            }
+            ApplyPatches(exePath, patchedPath);
 
             string targetPath = Path.Combine(m_shenzhenDir, "Shenzhen.exe");
             if (File.Exists(targetPath))
@@ -55,25 +51,20 @@ namespace ShenzhenMod
 
             sm_log.InfoFormat("Moving \"{0}\" to \"{1}\"", patchedPath, targetPath);
             File.Move(patchedPath, targetPath);
-
-            CopyContent();
         }
 
-        private void CopyContent()
+        private void ApplyPatches(string unpatchedPath, string patchedPath)
         {
-            using (var stream = Assembly.GetCallingAssembly().GetManifestResourceStream("ShenzhenMod.Content.messages.en.bigger-prototyping-area.txt"))
+            sm_log.InfoFormat("Reading module \"{0}\"", unpatchedPath);
+            using (var module = ModuleDefinition.ReadModule(unpatchedPath))
             {
-                string path = Path.Combine(m_shenzhenDir, @"Content\messages.en\bigger-prototyping-area.txt");
-                using (var file = File.Create(path))
-                {
-                    sm_log.InfoFormat("Writing resource file to \"{0}\"", path);
-                    stream.CopyTo(file);
-                }
+                sm_log.Info("Applying patches");
 
-                // Although we haven't got a Chinese version, we need to have a corresponding file in messages.zh to avoid a crash.
-                string path2 = Path.Combine(m_shenzhenDir, @"Content\messages.zh\bigger-prototyping-area.txt");
-                sm_log.InfoFormat("Copying \"{0}\" to \"{1}\"", path, path2);
-                File.Copy(path, path2, overwrite: true);
+                new IncreaseMaxBoardSize(module).Apply();
+                new AddBiggerSandbox(module, m_shenzhenDir).Apply();
+
+                sm_log.InfoFormat("Saving patched file to \"{0}\"", patchedPath);
+                module.Write(patchedPath);
             }
         }
     }
