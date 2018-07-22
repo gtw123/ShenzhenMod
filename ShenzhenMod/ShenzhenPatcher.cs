@@ -460,13 +460,13 @@ namespace ShenzhenMod
                 il.Emit(OpCodes.Ldstr, "SzSandbox2");
                 il.Emit(OpCodes.Stfld, puzzleType.FindField("#=qlL1QPubmH$dO$NAHNGoUDw=="));
 
-                // puzzle.bool_0 = Puzzles.Sandbox.bool_0;
+                // puzzle.IsSandbox = Puzzles.Sandbox.IsSandbox;
                 var sandboxField = puzzlesType.FindField("#=qvzpyliUbgr777YoqzAAXLGNI$dCHTiOXxvu$zPSifY0=");
-                var bool0Field = puzzleType.FindField("#=qdTVp5wO4TlFm5ZhQQtqszQ==");
+                var isSandboxField = puzzleType.FindField("#=qdTVp5wO4TlFm5ZhQQtqszQ==");
                 il.Emit(OpCodes.Ldloc_S, puzzle);
                 il.Emit(OpCodes.Ldsfld, sandboxField);
-                il.Emit(OpCodes.Ldfld, bool0Field);
-                il.Emit(OpCodes.Stfld, bool0Field);
+                il.Emit(OpCodes.Ldfld, isSandboxField);
+                il.Emit(OpCodes.Stfld, isSandboxField);
 
                 // puzzle.GetTestRunOutputs = Puzzles.Sandbox.GetTestRunOutputs;
                 var getTestRunOutputsField = puzzleType.FindField("#=qlGwF$M44YyN9h7pwe8q1VoWLdLS7VaxWT5ZYZgtbLJA=");
