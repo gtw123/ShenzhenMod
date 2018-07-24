@@ -12,11 +12,11 @@ namespace ShenzhenMod.Patches
     {
         private static readonly log4net.ILog sm_log = log4net.LogManager.GetLogger(typeof(IncreaseMaxBoardSize));
 
-        private ModuleDefinition m_module;
+        private ShenzhenTypes m_types;
 
-        public IncreaseMaxBoardSize(ModuleDefinition module)
+        public IncreaseMaxBoardSize(ShenzhenTypes types)
         {
-            m_module = module;
+            m_types = types;
         }
 
         public void Apply()
@@ -37,9 +37,10 @@ namespace ShenzhenMod.Patches
         /// </summary>
         private void ChangeMaxBoardSize()
         {
-            var method = m_module.FindMethod("#=qL_uhZp1CYmicXxDRy$c1Bw==", ".cctor");
-            method.FindInstruction(OpCodes.Ldc_I4_S, (sbyte)22).Operand = (sbyte)44;
-            method.FindInstruction(OpCodes.Ldc_I4_S, (sbyte)14).Operand = (sbyte)28;
+            // Find "MaxBoardSize = new Index2(22, 14)" and change the values.
+            var instr = m_types.Globals.ClassConstructor.FindInstruction(OpCodes.Ldc_I4_S, (sbyte)22);
+            instr.Operand = (sbyte)44;
+            instr.Next.Operand = (sbyte)28;
         }
 
         /// <summary>
@@ -51,7 +52,9 @@ namespace ShenzhenMod.Patches
         /// </summary>
         private void ChangeScrollSize()
         {
-            var method = m_module.FindMethod("#=qL_uhZp1CYmicXxDRy$c1Bw==", "#=qOM$GUjkyhx7zr2YetMuA92qBxgTzT0XpP5Hho_r9c2A=");
+            // Find the method which returns a bool and uses the constant 1920f
+            var method = m_types.Globals.Type.Methods.Where(m => m.IsPublic && m.IsStatic && m.ReturnType == m_types.BuiltIn.Boolean)
+                .Single(m => m.Body.Instructions.Any(i => i.Matches(OpCodes.Ldc_R4, 1920f)));
             method.FindInstruction(OpCodes.Ldc_R4, 1920f).Operand = 3840f;
             method.FindInstruction(OpCodes.Ldc_R4, 1080f).Operand = 2160f;
         }
@@ -61,11 +64,10 @@ namespace ShenzhenMod.Patches
         /// </summary>
         private void AddSizeToPuzzle()
         {
-            var puzzleType = m_module.FindType("Puzzle");
-            var index2DType = m_module.FindType("Index2");
-            var sizeField = new FieldDefinition("size", FieldAttributes.Private, index2DType);
+            var puzzleType = m_types.Puzzle.Type;
+            var sizeField = new FieldDefinition("size", FieldAttributes.Private, m_types.Index2.Type);
             puzzleType.Fields.Add(sizeField);
-            var isSizeSetField = new FieldDefinition("isSizeSet", FieldAttributes.Private, m_module.TypeSystem.Boolean);
+            var isSizeSetField = new FieldDefinition("isSizeSet", FieldAttributes.Private, m_types.BuiltIn.Boolean);
             puzzleType.Fields.Add(isSizeSetField);
 
             AddSetSize();
@@ -73,8 +75,8 @@ namespace ShenzhenMod.Patches
 
             void AddSetSize()
             {
-                var method = new MethodDefinition("SetSize", MethodAttributes.Public, m_module.TypeSystem.Void);
-                method.Parameters.Add(new ParameterDefinition("size", ParameterAttributes.None, index2DType));
+                var method = new MethodDefinition("SetSize", MethodAttributes.Public, m_types.BuiltIn.Void);
+                method.Parameters.Add(new ParameterDefinition("size", ParameterAttributes.None, m_types.Index2.Type));
                 puzzleType.Methods.Add(method);
                 var il = method.Body.GetILProcessor();
 
@@ -97,7 +99,7 @@ namespace ShenzhenMod.Patches
             // puzzles to set their size.
             void AddGetSize()
             {
-                var method = new MethodDefinition("GetSize", MethodAttributes.Public, index2DType);
+                var method = new MethodDefinition("GetSize", MethodAttributes.Public, m_types.Index2.Type);
                 puzzleType.Methods.Add(method);
                 var il = method.Body.GetILProcessor();
                 var label1 = il.Create(OpCodes.Nop);
@@ -116,7 +118,7 @@ namespace ShenzhenMod.Patches
                 il.Append(label1);
                 label1.Set(OpCodes.Ldc_I4_S, (sbyte)22);
                 il.Emit(OpCodes.Ldc_I4_S, (sbyte)14);
-                il.Emit(OpCodes.Newobj, index2DType.FindMethod(".ctor"));
+                il.Emit(OpCodes.Newobj, m_types.Index2.Constructor);
 
                 il.Emit(OpCodes.Ret);
             }
@@ -130,14 +132,14 @@ namespace ShenzhenMod.Patches
         /// </summary>
         private void PatchTileCreation()
         {
-            var method = m_module.FindMethod("#=qWo_Ilq5Sos4EQLLY_xDRAjAw6Q83Z6ZpjGeSwvBaB5U=", "#=qAmFcmFbUxPAB0DUb13KNOEmJgRvZSM6E$AgqIvIwrnk=");
+            var method = m_types.Module.FindMethod("#=qWo_Ilq5Sos4EQLLY_xDRAjAw6Q83Z6ZpjGeSwvBaB5U=", "#=qAmFcmFbUxPAB0DUb13KNOEmJgRvZSM6E$AgqIvIwrnk=");
             var il = method.Body.GetILProcessor();
 
-            var instructionsToReplace = method.FindInstructions(OpCodes.Ldsfld, m_module.FindField("#=qL_uhZp1CYmicXxDRy$c1Bw==", "#=qAVzUnhNiHUMBOnnky4iCCA=="), 2);
+            var instructionsToReplace = method.FindInstructions(OpCodes.Ldsfld, m_types.Module.FindField("#=qL_uhZp1CYmicXxDRy$c1Bw==", "#=qAVzUnhNiHUMBOnnky4iCCA=="), 2);
             foreach (var instr in instructionsToReplace.ToList())
             {
                 il.InsertBefore(instr, il.Create(OpCodes.Ldarg_0));
-                il.InsertBefore(instr, il.Create(OpCodes.Call, m_module.FindMethod("Puzzle", "GetSize")));
+                il.InsertBefore(instr, il.Create(OpCodes.Call, m_types.Puzzle.Type.FindMethod("GetSize")));
                 il.Remove(instr);
             }
         }
@@ -148,7 +150,8 @@ namespace ShenzhenMod.Patches
         /// </summary>
         private void PatchTraceReading()
         {
-            var method = m_module.FindMethod("Solution", "#=qMQ0eadM7OBun57pFLO1wWA==");
+            // The method we're looking for has two parameters and the first is by ref: #=qR8Z5w5CojvJHXAww9GCK5A==<Chip>&
+            var method = m_types.Solution.Type.Methods.Single(m => m.IsPrivate && m.Parameters.Count == 2 && m.Parameters[0].ParameterType.IsByReference);
             var il = method.Body.GetILProcessor();
 
             FixRowShuffling();
@@ -210,24 +213,23 @@ namespace ShenzhenMod.Patches
                 il.RemoveRange(ifIndexEquals02.Next, jLoopStart);
 
                 // Add two new variables
-                var lastY = new VariableDefinition(m_module.TypeSystem.Int32);
+                var lastY = new VariableDefinition(m_types.BuiltIn.Int32);
                 method.Body.Variables.Add(lastY);
-                var maxY = new VariableDefinition(m_module.TypeSystem.Int32);
+                var maxY = new VariableDefinition(m_types.BuiltIn.Int32);
                 method.Body.Variables.Add(maxY);
 
                 // Initialize the two new variables and add the "if (lastY > 0)" check
-                var index2Type = m_module.FindType("Index2");
                 ifIndexEquals02.Set(OpCodes.Ldloca_S, method.Body.Variables[13]);
                 il.InsertBefore(jLoopStart,
-                    il.Create(OpCodes.Ldfld, index2Type.Fields[2]),
+                    il.Create(OpCodes.Ldfld, m_types.Index2.Y),
                     il.Create(OpCodes.Stloc_S, lastY),
                     il.Create(OpCodes.Ldloc_S, lastY),
                     il.Create(OpCodes.Ldc_I4_0),
                     il.Create(OpCodes.Ble, method.Body.Instructions.Last()),
                     il.Create(OpCodes.Ldarg_0),
-                    il.Create(OpCodes.Ldfld, m_module.FindField("Solution", "#=qoToRfupqxh4PHUk11ckgIg==")),
-                    il.Create(OpCodes.Callvirt, m_module.FindMethod("#=qU2wvld4wYwd2RmifHjQEOQ==", "#=qa$TS_$HdBzzP07FjV63Yrw==")),
-                    il.Create(OpCodes.Ldfld, index2Type.Fields[2]),
+                    il.Create(OpCodes.Ldfld, m_types.Solution.Type.FindField("#=qoToRfupqxh4PHUk11ckgIg==")),
+                    il.Create(OpCodes.Callvirt, m_types.Module.FindMethod("#=qU2wvld4wYwd2RmifHjQEOQ==", "#=qa$TS_$HdBzzP07FjV63Yrw==")),
+                    il.Create(OpCodes.Ldfld, m_types.Index2.Y),
                     il.Create(OpCodes.Stloc_S, maxY));
 
                 // Replace "k + 3" with "k + lastY"
@@ -249,9 +251,9 @@ namespace ShenzhenMod.Patches
                 var instr2 = method.FindInstruction(OpCodes.Ldc_I4_S, (sbyte)22);
                 instr2.Set(OpCodes.Ldarg_0, null);
                 il.InsertBefore(instr2.Next,
-                    il.Create(OpCodes.Ldfld, m_module.FindField("Solution", "#=qoToRfupqxh4PHUk11ckgIg==")),
-                    il.Create(OpCodes.Callvirt, m_module.FindMethod("#=qU2wvld4wYwd2RmifHjQEOQ==", "#=qa$TS_$HdBzzP07FjV63Yrw==")),
-                    il.Create(OpCodes.Ldfld, index2Type.Fields[1]));
+                    il.Create(OpCodes.Ldfld, m_types.Solution.Type.FindField("#=qoToRfupqxh4PHUk11ckgIg==")),
+                    il.Create(OpCodes.Callvirt, m_types.Module.FindMethod("#=qU2wvld4wYwd2RmifHjQEOQ==", "#=qa$TS_$HdBzzP07FjV63Yrw==")),
+                    il.Create(OpCodes.Ldfld, m_types.Index2.X));
             }
 
             // By default, the trace reading code assumes the width of the traces in the solution file
@@ -325,7 +327,8 @@ namespace ShenzhenMod.Patches
         /// </summary>
         private void PatchTraceWriting()
         {
-            var method = m_module.FindMethod("Solution", "#=qRifLIKn3UtLp6BE8b6pMlSNVCWp8Sqx23hvNKjNJFiE=");
+            // Look for the private method with a single StringBuilder parameter
+            var method = m_types.Solution.Type.Methods.Single(m => m.IsPrivate && m.Parameters.Count == 1 && m.Parameters[0].ParameterType.ToString() == "System.Text.StringBuilder");
             var il = method.Body.GetILProcessor();
 
             /* Replace this:
@@ -348,15 +351,13 @@ namespace ShenzhenMod.Patches
 
             */
 
-            var index2Type = m_module.FindType("Index2");
-            var solutionType = m_module.FindType("Solution");
-            var puzzleType = m_module.FindType("Puzzle");
-            var optionalType = m_module.FindType("#=qR8Z5w5CojvJHXAww9GCK5A==");
+            var puzzleType = m_types.Puzzle.Type;
+            var solutionType = m_types.Solution.Type;
 
             // Add two new variables
-            var size = new VariableDefinition(index2Type);
+            var size = new VariableDefinition(m_types.Index2.Type);
             method.Body.Variables.Add(size);
-            var puzzle = new VariableDefinition(optionalType.MakeGenericInstanceType(puzzleType));
+            var puzzle = new VariableDefinition(m_types.Optional.Type.MakeGenericInstanceType(puzzleType));
             method.Body.Variables.Add(puzzle);
 
             var loopStart = method.FindInstructionAtOffset(0x0010, OpCodes.Ldarg_0, null);
@@ -365,24 +366,24 @@ namespace ShenzhenMod.Patches
                 // size = this.Traces.GetSize();
                 il.Create(OpCodes.Ldarg_0),
                 il.Create(OpCodes.Ldfld, solutionType.FindField("#=qoToRfupqxh4PHUk11ckgIg==")),
-                il.Create(OpCodes.Callvirt, m_module.FindMethod("#=qU2wvld4wYwd2RmifHjQEOQ==", "#=qa$TS_$HdBzzP07FjV63Yrw==")),
+                il.Create(OpCodes.Callvirt, m_types.Module.FindMethod("#=qU2wvld4wYwd2RmifHjQEOQ==", "#=qa$TS_$HdBzzP07FjV63Yrw==")),
                 il.Create(OpCodes.Stloc_S, size),
 
                 // Optional<Puzzle> puzzle = Puzzles.FindPuzzle(this.PuzzleName);
                 il.Create(OpCodes.Ldarg_0),
-                il.Create(OpCodes.Ldfld, solutionType.FindField("#=qTXd1K2Ra91bQy9H0YYRImQ==")),
-                il.Create(OpCodes.Call, m_module.FindMethod("Puzzles", "#=q3A2LvmLiLWo2_KzmaD5ILQ==")),
+                il.Create(OpCodes.Ldfld, m_types.Solution.PuzzleName),
+                il.Create(OpCodes.Call, m_types.Puzzles.FindPuzzle),
                 il.Create(OpCodes.Stloc_S, puzzle),
 
                 // if (puzzle.HasValue())
                 il.Create(OpCodes.Ldloca_S, puzzle),
-                il.Create(OpCodes.Call, optionalType.FindMethod("#=qmSp1X_ZAgy45Ga5$UXTJWQ==").MakeGeneric(puzzleType)),
+                il.Create(OpCodes.Call, m_types.Optional.HasValue),
                 il.Create(OpCodes.Brfalse_S, loopStart),
 
-                // size = puzzle.Value().GetSize();
+                // size = puzzle.GetValue().GetSize();
                 il.Create(OpCodes.Ldloca_S, puzzle),
-                il.Create(OpCodes.Call, optionalType.FindMethod("#=q5w1mvb6GQzXlvbmLqUxfcg==").MakeGeneric(puzzleType)),
-                il.Create(OpCodes.Call, m_module.FindMethod("Puzzle", "GetSize")),
+                il.Create(OpCodes.Call, m_types.Optional.GetValue),
+                il.Create(OpCodes.Call, puzzleType.FindMethod("GetSize")),
                 il.Create(OpCodes.Stloc_S, size));
             
             // Replace "this.Traces.GetSize()" with "size" in the first loop
@@ -402,13 +403,14 @@ namespace ShenzhenMod.Patches
         /// </summary>
         private void PatchCustomPuzzleReading()
         {
-            var method = m_module.FindMethod("CustomLevelCompiler", "#=qNa$RXaj4bc8c30RVXeX5uQ==");
+            var method = m_types.Module.FindType("CustomLevelCompiler").Methods.Single(m => m.IsPrivate && m.Parameters.Count == 2
+                && m.Parameters[0].ParameterType == m_types.BuiltIn.String && m.Parameters[1].ParameterType.ToString() == "System.Collections.Generic.Dictionary`2<System.Char,Index2>");
             var il = method.Body.GetILProcessor();
 
             // Change the code that gets the max board size to instead use the default board size of 22x14.
             // Technically custom puzzles are always 18x7, but to avoid changing the file format of existing
             // solutions we use the old default of 22x14 instead.
-            var instrs = method.FindInstructions(OpCodes.Ldsfld, m_module.FindField("#=qL_uhZp1CYmicXxDRy$c1Bw==", "#=qAVzUnhNiHUMBOnnky4iCCA=="), 2).ToList();
+            var instrs = method.FindInstructions(OpCodes.Ldsfld, m_types.Globals.MaxBoardSize, 2).ToList();
             instrs[0].Set(OpCodes.Ldc_I4_S, (sbyte)22);
             il.Remove(instrs[0].Next);
 

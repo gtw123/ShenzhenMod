@@ -58,10 +58,12 @@ namespace ShenzhenMod
             sm_log.InfoFormat("Reading module \"{0}\"", unpatchedPath);
             using (var module = ModuleDefinition.ReadModule(unpatchedPath))
             {
-                sm_log.Info("Applying patches");
+                sm_log.Info("Locating types");
+                var types = new ShenzhenTypes(module);
 
-                new IncreaseMaxBoardSize(module).Apply();
-                new AddBiggerSandbox(module, m_shenzhenDir).Apply();
+                sm_log.Info("Applying patches");
+                new IncreaseMaxBoardSize(types).Apply();
+                new AddBiggerSandbox(types, m_shenzhenDir).Apply();
                 new IncreaseMaxSpeed(module, m_shenzhenDir).Apply();
 
                 sm_log.InfoFormat("Saving patched file to \"{0}\"", patchedPath);
