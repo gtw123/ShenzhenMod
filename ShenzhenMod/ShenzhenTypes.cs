@@ -50,7 +50,7 @@ namespace ShenzhenMod
                 ClassConstructor = Type.FindMethod(".cctor");
 
                 // Find "MaxBoardSize = new Index2(22, 14)" and use that to get the MaxBoardSize field
-                MaxBoardSize = (FieldDefinition)ClassConstructor.FindInstruction(OpCodes.Ldc_I4_S, (sbyte)14).Next.Next.Operand;
+                MaxBoardSize = (FieldDefinition)ClassConstructor.FindInstruction(OpCodes.Ldc_I4_S, (sbyte)14).FindNext(OpCodes.Stsfld).Operand;
             }
         }
 
@@ -70,6 +70,20 @@ namespace ShenzhenMod
             }
         }
 
+        public class LType
+        {
+            public readonly TypeDefinition Type;
+            public readonly MethodDefinition GetString;
+
+            public LType(ModuleDefinition module)
+            {
+                Type = module.FindType("L");
+                GetString = Type.Methods.Single(m => m.IsPublic && m.Parameters.Count == 2
+                    && m.Parameters.All(p => p.ParameterType == module.TypeSystem.String)
+                    && m.ReturnType == module.FindType("LocString"));
+            }
+        }
+
         public class MessageThreadType
         {
             public readonly TypeDefinition Type;
@@ -86,11 +100,18 @@ namespace ShenzhenMod
         {
             public readonly TypeDefinition Type;
             public readonly MethodDefinition ClassConstructor;
+            public readonly MethodDefinition CreateAllThreads;
+            public readonly MethodDefinition CreateThread;
+            public readonly FieldDefinition AllThreads;
 
             public MessageThreadsType(ModuleDefinition module)
             {
                 Type = module.FindType("MessageThreads");
                 ClassConstructor = Type.FindMethod(".cctor");
+                CreateAllThreads = Type.Methods.Single(m => m.IsPublic && m.IsStatic && m.Body.Variables.Count == 2
+                    && m.Body.Variables[0].VariableType == module.FindType("MessageThread"));
+                CreateThread = Type.Methods.Single(m => m.IsPrivate && m.IsStatic && m.Parameters.Count == 8);
+                AllThreads = Type.Fields.Single(f => f.FieldType.IsArray && f.FieldType.GetElementType() == module.FindType("MessageThread"));
             }
         }
 
@@ -117,6 +138,9 @@ namespace ShenzhenMod
             public readonly MethodDefinition Constructor;
             public readonly FieldDefinition Name;
             public readonly FieldDefinition IsSandbox;
+            public readonly FieldDefinition Terminals;
+            public readonly FieldDefinition Tiles;
+            public readonly FieldDefinition GetTestRunOutputs;
 
             public PuzzleType(ModuleDefinition module)
             {
@@ -124,6 +148,10 @@ namespace ShenzhenMod
                 Constructor = Type.FindMethod(".ctor");
                 Name = Type.Fields.First(f => f.FieldType == module.TypeSystem.String);
                 IsSandbox = Type.Fields.First(f => f.FieldType == module.TypeSystem.Boolean);
+                Terminals = Type.Fields.Single(f => f.FieldType.ToString() == "Terminal[]");
+                Tiles = Type.Fields.Single(f => f.FieldType.ToString() == "System.Int32[]");
+                GetTestRunOutputs = Type.Fields.Single(f => f.FieldType.ToString().StartsWith("System.Func`3"));
+
             }
         }
 
@@ -182,6 +210,7 @@ namespace ShenzhenMod
         public readonly GameLogicType GameLogic;
         public readonly GlobalsType Globals;
         public readonly Index2Type Index2;
+        public readonly LType L;
         public readonly MessageThreadType MessageThread;
         public readonly MessageThreadsType MessageThreads;
         public readonly OptionalType Optional;
@@ -199,6 +228,7 @@ namespace ShenzhenMod
             GameLogic = new GameLogicType(module);
             Globals = new GlobalsType(module);
             Index2 = new Index2Type(module);
+            L = new LType(module);
             MessageThread = new MessageThreadType(module);
             MessageThreads = new MessageThreadsType(module);
             Optional = new OptionalType(module);

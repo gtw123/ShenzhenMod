@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using Mono.Cecil.Cil;
+using static System.FormattableString;
 
 namespace ShenzhenMod
 {
@@ -9,6 +10,22 @@ namespace ShenzhenMod
         public static bool Matches(this Instruction instruction, OpCode opCode, object operand)
         {
             return instruction.OpCode == opCode && Object.Equals(instruction.Operand, operand);
+        }
+
+        public static Instruction FindNext(this Instruction instruction, OpCode opCode)
+        {
+            var instr = instruction;
+            while (instr != null)
+            {
+                if (instr.OpCode == opCode)
+                {
+                    return instr;
+                }
+
+                instr = instr.Next;
+            }
+
+            throw new Exception(Invariant($"Cannot find instruction with OpCode \"{opCode}\" anywhere after instruction \"{instruction}\""));
         }
 
         public static void Set(this Instruction instruction, OpCode opCode, object operand)

@@ -58,7 +58,7 @@ namespace ShenzhenMod.Patches
                 method.Body.Variables.Add(puzzle);
 
                 // Puzzle puzzle = new Puzzle();
-                il.Emit(OpCodes.Newobj, puzzleType.FindMethod(".ctor"));
+                il.Emit(OpCodes.Newobj, m_types.Puzzle.Constructor);
                 il.Emit(OpCodes.Stloc_S, puzzle);
 
                 // puzzle.Name = "SzSandbox2";
@@ -71,19 +71,22 @@ namespace ShenzhenMod.Patches
                 il.Emit(OpCodes.Ldc_I4_1);
                 il.Emit(OpCodes.Stfld, m_types.Puzzle.IsSandbox);
 
+                // Find the built-in sandbox. It's the only puzzle with zero terminals.
+                var instr = m_types.Puzzles.ClassConstructor.Body.Instructions.Single(i => i.Matches(OpCodes.Ldc_I4_0, null) && i.Next.Matches(OpCodes.Newarr, m_types.Terminal.Type));
+                instr = instr.FindNext(OpCodes.Stsfld);
+                var sandboxField = (FieldDefinition)instr.Operand;
+
                 // puzzle.GetTestRunOutputs = Puzzles.Sandbox.GetTestRunOutputs;
-                var sandboxField = m_types.Puzzles.Type.FindField("#=qvzpyliUbgr777YoqzAAXLGNI$dCHTiOXxvu$zPSifY0=");
-                var getTestRunOutputsField = puzzleType.FindField("#=qlGwF$M44YyN9h7pwe8q1VoWLdLS7VaxWT5ZYZgtbLJA=");
                 il.Emit(OpCodes.Ldloc_S, puzzle);
                 il.Emit(OpCodes.Ldsfld, sandboxField);
-                il.Emit(OpCodes.Ldfld, getTestRunOutputsField);
-                il.Emit(OpCodes.Stfld, getTestRunOutputsField);
+                il.Emit(OpCodes.Ldfld, m_types.Puzzle.GetTestRunOutputs);
+                il.Emit(OpCodes.Stfld, m_types.Puzzle.GetTestRunOutputs);
 
                 // puzzle.Terminals = new Terminal[0];
                 il.Emit(OpCodes.Ldloc_S, puzzle);
                 il.Emit(OpCodes.Ldc_I4_0);
                 il.Emit(OpCodes.Newarr, m_types.Terminal.Type);
-                il.Emit(OpCodes.Stfld, puzzleType.FindField("#=qaFJXQsIwfkO1RLj_cooTHw=="));
+                il.Emit(OpCodes.Stfld, m_types.Puzzle.Terminals);
 
                 // puzzle.SetSize(new Index2(WIDTH, HEIGHT));
                 il.Emit(OpCodes.Ldloc_S, puzzle);
@@ -93,7 +96,6 @@ namespace ShenzhenMod.Patches
                 il.Emit(OpCodes.Call, puzzleType.FindMethod("SetSize"));
 
                 // puzzle.Tiles = new int[WIDTH * HEIGHT * 3];
-                var tilesField = puzzleType.FindField("#=q6aVVxGv0HU7As4f342iIMQ==");
                 il.Emit(OpCodes.Ldloc_S, puzzle);
                 il.Emit(OpCodes.Ldc_I4_S, (sbyte)WIDTH);
                 il.Emit(OpCodes.Ldc_I4_S, (sbyte)HEIGHT);
@@ -101,7 +103,7 @@ namespace ShenzhenMod.Patches
                 il.Emit(OpCodes.Ldc_I4_3);
                 il.Emit(OpCodes.Mul);
                 il.Emit(OpCodes.Newarr, m_types.BuiltIn.Int32);
-                il.Emit(OpCodes.Stfld, tilesField);
+                il.Emit(OpCodes.Stfld, m_types.Puzzle.Tiles);
 
                 // It's not clear how to initialize arrays with Mono.Cecil so for now we'll do it
                 // the brute force way...
@@ -145,14 +147,14 @@ namespace ShenzhenMod.Patches
                         
                     // puzzle.Tiles[index] = value1;
                     il.Emit(OpCodes.Ldloc_S, puzzle);
-                    il.Emit(OpCodes.Ldfld, tilesField);
+                    il.Emit(OpCodes.Ldfld, m_types.Puzzle.Tiles);
                     il.Emit(OpCodes.Ldc_I4, index);
                     il.Emit(OpCodes.Ldc_I4_S, (sbyte)value1);
                     il.Emit(OpCodes.Stelem_I4);
 
                     // puzzle.Tiles[index + 1] = value2;
                     il.Emit(OpCodes.Ldloc_S, puzzle);
-                    il.Emit(OpCodes.Ldfld, tilesField);
+                    il.Emit(OpCodes.Ldfld, m_types.Puzzle.Tiles);
                     il.Emit(OpCodes.Ldc_I4, index + 1);
                     il.Emit(OpCodes.Ldc_I4_S, (sbyte)value2);
                     il.Emit(OpCodes.Stelem_I4);
@@ -173,8 +175,7 @@ namespace ShenzhenMod.Patches
         /// </summary>
         private void AddSandbox2MessageThread()
         {
-            var messageThreadsType = m_types.MessageThreads.Type;
-            var method = messageThreadsType.FindMethod("#=qwjQuuxUKAcc2rhJ2_3COeg==");
+            var method = m_types.MessageThreads.CreateAllThreads;
             var il = method.Body.GetILProcessor();
 
             // Increase the length of the messageThreads array by one
@@ -184,22 +185,21 @@ namespace ShenzhenMod.Patches
             // We want to insert our new puzzle just after the existing sandbox, so shuffle the
             // later message threads forward by one.
             const int INSERT_INDEX = 18;
-            var messageThreadsField = messageThreadsType.Fields.Single(f => f.FieldType.IsArray && f.FieldType.GetElementType() == m_types.MessageThread.Type);
-            var endThreads = method.FindInstructionAtOffset(0x0e95, OpCodes.Call, messageThreadsType.FindMethod("#=qaIFdKxRWR2y8tIK$6OrYcBQLWhmFTT0LwFP$IOxB9$A="));
+            var endThreads = method.FindInstruction(OpCodes.Stsfld, m_types.MessageThreads.AllThreads).Next;
 
-            // Array.Copy(messageThreadsField, INSERT_INDEX, messageThreadsField, INSERT_INDEX + 1, NUM_THREADS - INSERT_INDEX);
+            // Array.Copy(AllThreads, INSERT_INDEX, AllThreads, INSERT_INDEX + 1, NUM_THREADS - INSERT_INDEX);
             il.InsertBefore(endThreads,
-                il.Create(OpCodes.Ldsfld, messageThreadsField),
+                il.Create(OpCodes.Ldsfld, m_types.MessageThreads.AllThreads),
                 il.Create(OpCodes.Ldc_I4_S, (sbyte)INSERT_INDEX),
-                il.Create(OpCodes.Ldsfld, messageThreadsField),
+                il.Create(OpCodes.Ldsfld, m_types.MessageThreads.AllThreads),
                 il.Create(OpCodes.Ldc_I4_S, (sbyte)(INSERT_INDEX + 1)),
                 il.Create(OpCodes.Ldc_I4_S, (sbyte)(NUM_THREADS - INSERT_INDEX)),
                 il.Create(OpCodes.Call, m_types.Module.ImportReference(typeof(Array).GetMethod("Copy", new[] { typeof(Array), typeof(int), typeof(Array), typeof(int), typeof(int) }))));
 
             // Now create our new message thread
-            // messageThreads[INSERT_INDEX] = CreateMessageThread((Location)0 /* Longteng Co. Ltd. */, /* stage unlocked at */ 6, "bigger-prototyping-area", Puzzles.Sandbox2, L.GetString("Bigger Prototyping Area", ""), (Enum2)2, 4, null);
+            // AllThreads[INSERT_INDEX] = CreateThread((Location)0 /* Longteng Co. Ltd. */, /* stage unlocked at */ 6, "bigger-prototyping-area", Puzzles.Sandbox2, L.GetString("Bigger Prototyping Area", ""), (Enum2)2, 4, null);
             il.InsertBefore(endThreads,
-                il.Create(OpCodes.Ldsfld, messageThreadsField),
+                il.Create(OpCodes.Ldsfld, m_types.MessageThreads.AllThreads),
                 il.Create(OpCodes.Ldc_I4_S, (sbyte)INSERT_INDEX),
                 il.Create(OpCodes.Ldc_I4_0),
                 il.Create(OpCodes.Ldc_I4_6),
@@ -207,11 +207,11 @@ namespace ShenzhenMod.Patches
                 il.Create(OpCodes.Ldsfld, m_types.Puzzles.Type.FindField("Sandbox2")),
                 il.Create(OpCodes.Ldstr, "Bigger Prototyping Area"),    // Name of the puzzle shown in the game
                 il.Create(OpCodes.Ldstr, ""),
-                il.Create(OpCodes.Call, m_types.Module.FindMethod("L", "#=qAr$2Ue4QaJr84iXEbxBSkQ==")),
+                il.Create(OpCodes.Call, m_types.L.GetString),
                 il.Create(OpCodes.Ldc_I4_2),
                 il.Create(OpCodes.Ldc_I4_4),
                 il.Create(OpCodes.Ldnull),
-                il.Create(OpCodes.Call, messageThreadsType.FindMethod("#=qfUbtIkU$VEWeJDUjSUPeyd54W9YJOUkOnvfvmUQDBmA=")),
+                il.Create(OpCodes.Call, m_types.MessageThreads.CreateThread),
                 il.Create(OpCodes.Stelem_Ref));
         }
 
