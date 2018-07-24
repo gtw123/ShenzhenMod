@@ -6,6 +6,33 @@ namespace ShenzhenMod
 {
     public class ShenzhenTypes
     {
+        public class CircuitEditorScreenType
+        {
+            public readonly TypeDefinition Type;
+            public readonly MethodDefinition Update;
+
+            public CircuitEditorScreenType(ModuleDefinition module)
+            {
+                Type = module.FindType("GameLogic/CircuitEditorScreen");
+
+                // The Update() method is also defined on the IScreen interface, so get the name from there
+                var updateMethod = module.FindType("IScreen").Methods.Single(m => m.Parameters.Count == 1 && m.Parameters[0].ParameterType == module.TypeSystem.Single);
+                Update = Type.FindMethod(updateMethod.Name);
+            }
+        }
+
+        public class GameLogicType
+        {
+            public readonly TypeDefinition Type;
+            public readonly CircuitEditorScreenType CircuitEditorScreen;
+
+            public GameLogicType(ModuleDefinition module)
+            {
+                Type = module.FindType("GameLogic");
+                CircuitEditorScreen = new CircuitEditorScreenType(module);
+            }
+        }
+
         public class GlobalsType
         {
             public readonly TypeDefinition Type;
@@ -138,9 +165,21 @@ namespace ShenzhenMod
             }
         }
 
+        public class TextureManagerType
+        {
+            public readonly TypeDefinition Type;
+
+            public TextureManagerType(ModuleDefinition module)
+            {
+                var textureType = module.FindType("Texture");
+                Type = module.Types.Single(t => t.Fields.Count > 24 && t.Fields.Take(10).All(f => f.FieldType == textureType));
+            }
+        }
+
         public readonly ModuleDefinition Module;
         public readonly TypeSystem BuiltIn;
 
+        public readonly GameLogicType GameLogic;
         public readonly GlobalsType Globals;
         public readonly Index2Type Index2;
         public readonly MessageThreadType MessageThread;
@@ -150,12 +189,14 @@ namespace ShenzhenMod
         public readonly PuzzlesType Puzzles;
         public readonly SolutionType Solution;
         public readonly TerminalType Terminal;
+        public readonly TextureManagerType TextureManager;
 
         public ShenzhenTypes(ModuleDefinition module)
         {
             Module = module;
             BuiltIn = module.TypeSystem;
 
+            GameLogic = new GameLogicType(module);
             Globals = new GlobalsType(module);
             Index2 = new Index2Type(module);
             MessageThread = new MessageThreadType(module);
@@ -165,6 +206,7 @@ namespace ShenzhenMod
             Puzzles = new PuzzlesType(module);
             Solution = new SolutionType(module);
             Terminal = new TerminalType(module);
+            TextureManager = new TextureManagerType(module);
         }
     }
 }

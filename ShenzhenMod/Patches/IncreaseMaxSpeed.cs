@@ -1,6 +1,7 @@
 ﻿using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.IO;
+using System.Linq;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
 
@@ -15,18 +16,14 @@ namespace ShenzhenMod.Patches
         private static readonly log4net.ILog sm_log = log4net.LogManager.GetLogger(typeof(IncreaseMaxSpeed));
 
         private string m_shenzhenDir;
-
-        private ModuleDefinition m_module;
-        private MethodDefinition m_updateMethod;
+        private ShenzhenTypes m_types;
 
         private const int EXTRA_WIDTH = 90;
 
-        public IncreaseMaxSpeed(ModuleDefinition module, string shenzhenDir)
+        public IncreaseMaxSpeed(ShenzhenTypes types, string shenzhenDir)
         {
             m_shenzhenDir = shenzhenDir;
-                
-            m_module = module;
-            m_updateMethod = m_module.FindMethod("GameLogic/CircuitEditorScreen", "#=qpYhEvKVxcLZ8qs1HauZIRQ==");
+            m_types = types;
         }
 
         public void Apply()
@@ -43,7 +40,7 @@ namespace ShenzhenMod.Patches
         /// </summary>
         private void AdjustMaxSpeed()
         {
-            m_updateMethod.FindInstruction(OpCodes.Ldc_R4, 30f).Operand = 100f;
+            m_types.GameLogic.CircuitEditorScreen.Update.FindInstruction(OpCodes.Ldc_R4, 30f).Operand = 100f;
         }
 
         /// <summary>
@@ -51,11 +48,13 @@ namespace ShenzhenMod.Patches
         /// </summary>
         private void AdjustControls()
         {
+            var updateMethod = m_types.GameLogic.CircuitEditorScreen.Update;
+
             // Increase the maximum allowed X position of the playback speed slider
-            m_updateMethod.FindInstruction(OpCodes.Ldc_I4, 706).Operand = 706 + EXTRA_WIDTH;
+            updateMethod.FindInstruction(OpCodes.Ldc_I4, 706).Operand = 706 + EXTRA_WIDTH;
 
             // Move the "Show Wires" and "Hide Signals" buttons to the right
-            foreach (var instr in m_updateMethod.FindInstructions(OpCodes.Ldc_R4, 850f, 2))
+            foreach (var instr in updateMethod.FindInstructions(OpCodes.Ldc_R4, 850f, 2))
             {
                 instr.Operand = 850f + EXTRA_WIDTH;
             }
@@ -99,11 +98,20 @@ namespace ShenzhenMod.Patches
 
             void AdjustTextureName()
             {
-                var method = m_module.FindMethod("#=qP_OYruvcHHy1DUOE9PEtpX9r7_JMX_e00SfXCzZ60Hs=", "#=qcJXbB28Z53jKHYrZi9DF1A==");
+                // Since the names of the textures are obfuscated it's difficult to find the one we want.
+                // For now we'll use a hard-coded index but we'll check that it matches the field used
+                // where CircuitEditorScreen.Update() draws it. This could easily break if the game
+                // is updated, but the chance of us getting the wrong texture is very low.
+                var panelSandboxTextureField = m_types.TextureManager.Type.Fields[15].FieldType.Resolve().Fields[32];
+                m_types.GameLogic.CircuitEditorScreen.Update.FindInstructionAtOffset(0x2775, OpCodes.Ldfld, panelSandboxTextureField); // This will throw if it doesn't match our texture field
+
+                // Find the method that loads all the textures
+                var method = m_types.TextureManager.Type.Methods.Single(m => m.Parameters.Count == 1 && m.Parameters[0].ParameterType.ToString() == "System.Action`1<System.Int32>");
                 var il = method.Body.GetILProcessor();
 
-                // Change the texture to use our new file
-                var instr = method.FindInstruction(OpCodes.Ldc_I4, (int)-1809885311);
+                // Change it to use our new file
+                // panelSandboxTextureField = LoadTexture(DeobfuscateString(-1809885311))  =>  panelSandboxTextureField = LoadTexture("textures/editor/newTextureName");
+                var instr = method.FindInstruction(OpCodes.Stfld, panelSandboxTextureField).Previous.Previous.Previous;
                 instr.Set(OpCodes.Ldstr, "textures/editor/" + newTextureName);
                 il.Remove(instr.Next);
             }

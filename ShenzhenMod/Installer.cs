@@ -64,7 +64,7 @@ namespace ShenzhenMod
                 sm_log.Info("Applying patches");
                 new IncreaseMaxBoardSize(types).Apply();
                 new AddBiggerSandbox(types, m_shenzhenDir).Apply();
-                new IncreaseMaxSpeed(module, m_shenzhenDir).Apply();
+                new IncreaseMaxSpeed(types, m_shenzhenDir).Apply();
 
                 sm_log.InfoFormat("Saving patched file to \"{0}\"", patchedPath);
                 module.Write(patchedPath);
