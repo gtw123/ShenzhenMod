@@ -174,12 +174,14 @@ namespace ShenzhenMod
             public readonly TypeDefinition Type;
             public readonly MethodDefinition Constructor;
             public readonly FieldDefinition PuzzleName;
+            public readonly FieldDefinition Traces;
 
-            public SolutionType(ModuleDefinition module)
+            public SolutionType(ModuleDefinition module, TracesType traces)
             {
                 Type = module.FindType("Solution");
                 Constructor = Type.FindMethod(".ctor");
                 PuzzleName = Type.Fields.Where(f => f.FieldType == module.TypeSystem.String).Skip(1).First();
+                Traces = Type.Fields.Single(f => f.FieldType == traces.Type);
             }
         }
 
@@ -204,6 +206,23 @@ namespace ShenzhenMod
             }
         }
 
+        public class TracesType
+        {
+            public readonly TypeDefinition Type;
+            public readonly MethodDefinition GetSize;
+
+            public TracesType(ModuleDefinition module)
+            {
+                var structType = module.Types.Single(t => t.IsValueType && t.Fields.Count == 2
+                    && t.Fields[0].FieldType == module.FindType("Index2")
+                    && t.Fields[1].FieldType == module.FindType("Trace"));
+
+                // Traces is an IEnumerable of the above struct type
+                Type = module.Types.Single(t => t.Interfaces.Count > 0 && t.Interfaces.Any(i => i.InterfaceType.ToString() == $"System.Collections.Generic.IEnumerable`1<{structType.Name}>"));
+                GetSize = Type.Methods.Single(m => m.IsPublic && m.Parameters.Count == 0 && m.ReturnType == module.FindType("Index2"));
+            }
+        }
+
         public readonly ModuleDefinition Module;
         public readonly TypeSystem BuiltIn;
 
@@ -219,6 +238,7 @@ namespace ShenzhenMod
         public readonly SolutionType Solution;
         public readonly TerminalType Terminal;
         public readonly TextureManagerType TextureManager;
+        public readonly TracesType Traces;
 
         public ShenzhenTypes(ModuleDefinition module)
         {
@@ -234,9 +254,11 @@ namespace ShenzhenMod
             Optional = new OptionalType(module);
             Puzzle = new PuzzleType(module);
             Puzzles = new PuzzlesType(module);
-            Solution = new SolutionType(module);
             Terminal = new TerminalType(module);
             TextureManager = new TextureManagerType(module);
+            Traces = new TracesType(module);
+
+            Solution = new SolutionType(module, Traces);
         }
     }
 }
