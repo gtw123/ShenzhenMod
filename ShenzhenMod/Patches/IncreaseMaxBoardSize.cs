@@ -380,12 +380,12 @@ namespace ShenzhenMod.Patches
 
                 // if (puzzle.HasValue())
                 il.Create(OpCodes.Ldloca_S, puzzle),
-                il.Create(OpCodes.Call, m_types.Optional.HasValue),
+                il.Create(OpCodes.Call, m_types.Optional.HasValue(puzzleType)),
                 il.Create(OpCodes.Brfalse_S, loopStart),
 
                 // size = puzzle.GetValue().GetSize();
                 il.Create(OpCodes.Ldloca_S, puzzle),
-                il.Create(OpCodes.Call, m_types.Optional.GetValue),
+                il.Create(OpCodes.Call, m_types.Optional.GetValue(puzzleType)),
                 il.Create(OpCodes.Call, puzzleType.FindMethod("GetSize")),
                 il.Create(OpCodes.Stloc_S, size));
             

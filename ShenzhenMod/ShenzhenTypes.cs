@@ -119,16 +119,27 @@ namespace ShenzhenMod
         {
             public readonly TypeDefinition Type;
             public readonly MethodDefinition ClassConstructor;
-            public readonly MethodDefinition HasValue;
-            public readonly MethodDefinition GetValue;
+
+            private readonly MethodDefinition m_hasValue;
+            private readonly MethodDefinition m_getValue;
+
+            public MethodReference HasValue(TypeReference typeParam)
+            {
+                return m_hasValue.MakeGeneric(typeParam);
+            }
+
+            public MethodReference GetValue(TypeReference typeParam)
+            {
+                return m_getValue.MakeGeneric(typeParam);
+            }
 
             public OptionalType(ModuleDefinition module)
             {
                 // The Optional<T> type has two fields: a boolean and a T
                 Type = module.Types.Single(t => t.IsValueType && t.HasGenericParameters && t.Fields.Count == 2
                     && t.Fields[0].FieldType == module.TypeSystem.Boolean && t.Fields[1].FieldType == t.GenericParameters[0]);
-                HasValue = Type.Methods.Single(m => m.IsPublic && m.Parameters.Count == 0 && m.ReturnType == module.TypeSystem.Boolean);
-                GetValue = Type.Methods.Single(m => m.IsPublic && m.Parameters.Count == 0 && m.ReturnType == Type.GenericParameters[0]);
+                m_hasValue = Type.Methods.Single(m => m.IsPublic && m.Parameters.Count == 0 && m.ReturnType == module.TypeSystem.Boolean);
+                m_getValue = Type.Methods.Single(m => m.IsPublic && m.Parameters.Count == 0 && m.ReturnType == Type.GenericParameters[0]);
             }
         }
 
