@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Configuration;
 using System.Globalization;
 using System.IO;
 using Mono.Cecil;
@@ -64,7 +65,12 @@ namespace ShenzhenMod
                 sm_log.Info("Applying patches");
                 new IncreaseMaxBoardSize(types).Apply();
                 new AddBiggerSandbox(types, m_shenzhenDir).Apply();
-                new IncreaseMaxSpeed(types, m_shenzhenDir).Apply();
+                new AdjustPlaybackSpeedSlider(types, m_shenzhenDir).Apply();
+
+                if (bool.TryParse(ConfigurationManager.AppSettings["IncreaseMaxSpeed"], out bool increaseMaxSpeed) && increaseMaxSpeed)
+                {
+                    new IncreaseMaxSpeed(types).Apply();
+                }
 
                 sm_log.InfoFormat("Saving patched file to \"{0}\"", patchedPath);
                 module.Write(patchedPath);

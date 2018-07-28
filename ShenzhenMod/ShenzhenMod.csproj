@@ -42,12 +42,14 @@
       <HintPath>..\ThirdParty\mono.cecil-0.10.0\bin\Mono.Cecil.Rocks.dll</HintPath>
     </Reference>
     <Reference Include="System" />
+    <Reference Include="System.Configuration" />
     <Reference Include="System.Core" />
     <Reference Include="Microsoft.CSharp" />
     <Reference Include="System.Drawing" />
     <Reference Include="System.Windows.Forms" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Patches\AdjustPlaybackSpeedSlider.cs" />
     <Compile Include="ShenzhenTypes.cs" />
     <Compile Include="CecilCilExtensions.cs" />
     <Compile Include="CecilExtensions.cs" />
