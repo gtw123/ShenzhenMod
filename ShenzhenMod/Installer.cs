@@ -16,6 +16,11 @@ namespace ShenzhenMod
 
         public Installer(string shenzhenDir)
         {
+            if (String.IsNullOrEmpty(shenzhenDir))
+            {
+                throw new Exception("No SHENZHEN I/O directory specified");
+            }
+
             m_shenzhenDir = shenzhenDir;
         }
 
@@ -23,15 +28,16 @@ namespace ShenzhenMod
         {
             sm_log.Info("Finding unpatched SHENZHEN I/O executable");
             string exePath = ShenzhenLocator.FindUnpatchedShenzhenExecutable(m_shenzhenDir);
+            string exeDir = Path.GetDirectoryName(exePath);
 
             if (Path.GetFileName(exePath).Equals("Shenzhen.exe", StringComparison.OrdinalIgnoreCase))
             {
-                string backupPath = Path.Combine(m_shenzhenDir, "Shenzhen.Unpatched.exe");
+                string backupPath = Path.Combine(exeDir, "Shenzhen.Unpatched.exe");
                 sm_log.InfoFormat("Backing up unpatched executable \"{0}\" to \"{1}\"", exePath, backupPath);
                 File.Copy(exePath, backupPath,  overwrite: true);
             }
 
-            string patchedPath = Path.Combine(m_shenzhenDir, "Shenzhen.Patched.exe");
+            string patchedPath = Path.Combine(exeDir, "Shenzhen.Patched.exe");
             if (File.Exists(patchedPath))
             {
                 sm_log.InfoFormat("Deleting existing patched file \"{0}\"", patchedPath);
@@ -40,12 +46,12 @@ namespace ShenzhenMod
 
             ApplyPatches(exePath, patchedPath);
 
-            string targetPath = Path.Combine(m_shenzhenDir, "Shenzhen.exe");
+            string targetPath = Path.Combine(exeDir, "Shenzhen.exe");
             if (File.Exists(targetPath))
             {
                 // Rename the existing Shenzhen.exe before overwriting it, in case the user wants to roll back
                 string timestamp = DateTime.Now.ToString("yyyyMMdd-HHmmss", CultureInfo.InvariantCulture);
-                string backupPath = Path.Combine(m_shenzhenDir, Invariant($"Shenzhen.{timestamp}.exe"));
+                string backupPath = Path.Combine(exeDir, Invariant($"Shenzhen.{timestamp}.exe"));
                 sm_log.InfoFormat("Moving \"{0}\" to \"{1}\"", targetPath, backupPath);
                 File.Move(targetPath, backupPath);
             }
@@ -63,9 +69,10 @@ namespace ShenzhenMod
                 var types = new ShenzhenTypes(module);
 
                 sm_log.Info("Applying patches");
+                string exeDir = Path.GetDirectoryName(unpatchedPath);
                 new IncreaseMaxBoardSize(types).Apply();
-                new AddBiggerSandbox(types, m_shenzhenDir).Apply();
-                new AdjustPlaybackSpeedSlider(types, m_shenzhenDir).Apply();
+                new AddBiggerSandbox(types, exeDir).Apply();
+                new AdjustPlaybackSpeedSlider(types, exeDir).Apply();
 
                 if (bool.TryParse(ConfigurationManager.AppSettings["IncreaseMaxSpeed"], out bool increaseMaxSpeed) && increaseMaxSpeed)
                 {

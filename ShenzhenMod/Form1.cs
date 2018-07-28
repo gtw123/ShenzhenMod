@@ -7,11 +7,15 @@ namespace ShenzhenMod
     {
         private static readonly log4net.ILog sm_log = log4net.LogManager.GetLogger(typeof(Form1));
 
+        private ShenzhenLocator m_locator = new ShenzhenLocator();
+
         public Form1()
         {
             InitializeComponent();
 
-            m_exeFolderField.Text = ShenzhenLocator.FindShenzhenDirectory();
+            this.label4.Text = m_locator.GetUIString("LocateShenzhenFolder");
+            this.label7.Text = m_locator.GetUIString("SaveFilesHint");
+            m_exeFolderField.Text = m_locator.FindShenzhenDirectory();
         }
 
         private void BrowseButtonClick(object sender, System.EventArgs e)
@@ -20,7 +24,7 @@ namespace ShenzhenMod
             {
                 dialog.RootFolder = Environment.SpecialFolder.MyComputer;
                 dialog.SelectedPath = m_exeFolderField.Text;
-                dialog.Description = @"Please locate your SHENZHEN I/O installation folder. This will usually be C:\Program Files (x86)\Steam\steamapps\common\SHENZHEN IO";
+                dialog.Description = m_locator.GetUIString("LocateShenzhenFolderWithHint");
                 var result = dialog.ShowDialog(this);
                 if (result == DialogResult.OK)
                 {

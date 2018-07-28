@@ -112,7 +112,7 @@
             this.label4.Name = "label4";
             this.label4.Size = new System.Drawing.Size(251, 15);
             this.label4.TabIndex = 2;
-            this.label4.Text = "Locate your SHENZHEN I/O installation folder:";
+            this.label4.Text = "<placeholder text>";
             // 
             // label5
             // 
@@ -141,7 +141,7 @@
             this.label7.Name = "label7";
             this.label7.Size = new System.Drawing.Size(671, 26);
             this.label7.TabIndex = 2;
-            this.label7.Text = "Your save files are normally located in:  My Documents\\My Games\\SHENZHEN IO";
+            this.label7.Text = "<placeholder text>";
             // 
             // Form1
             // 

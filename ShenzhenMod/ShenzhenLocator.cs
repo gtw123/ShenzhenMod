@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Security.Cryptography;
 using System.IO;
@@ -7,54 +8,106 @@ using static System.FormattableString;
 
 namespace ShenzhenMod
 {
-    public static class ShenzhenLocator
+    public class ShenzhenLocator
     {
         private static readonly log4net.ILog sm_log = log4net.LogManager.GetLogger(typeof(ShenzhenLocator));
 
-        public static string FindShenzhenDirectory()
+        private Dictionary<string, string> m_uiStrings;
+        private Func<IEnumerable<string>> m_getShenzhenSearchPaths;
+
+        public ShenzhenLocator()
         {
-            return FindShenzhenSteamDirectory() ?? FindShenzhenGoGDirectory();
+            switch (Environment.OSVersion.Platform)
+            {
+                case PlatformID.Win32NT:
+                {
+                    m_uiStrings = new Dictionary<string, string> {
+                        ["LocateShenzhenFolder"] = "Locate your SHENZHEN I/O installation folder:",
+                        ["LocateShenzhenFolderWithHint"] = @"Please locate your SHENZHEN I/O installation folder. This will usually be  C:\Program Files (x86)\Steam\steamapps\common\SHENZHEN IO",
+                        ["SaveFilesHint"] = @"Your save files are normally located in: My Documents\My Games\SHENZHEN IO\",
+                    };
+
+                    m_getShenzhenSearchPaths = GetWindowsSearchPaths;
+                    break;
+                }
+                case PlatformID.Unix:
+                {
+                    m_uiStrings = new Dictionary<string, string> {
+                        ["LocateShenzhenFolder"] = "Locate your SHENZHEN I/O installation directory:",
+                        ["LocateShenzhenFolderWithHint"] = @"Please locate your SHENZHEN I/O installation directory. This will usually be $HOME/.steam/steam/steamapps/common/SHENZHEN IO/",
+                        ["SaveFilesHint"] = @"Your save files are normally located in: $HOME/.local/share/SHENZHEN IO",
+                    };
+
+                    m_getShenzhenSearchPaths = GetLinuxSearchPaths;
+                    break;
+                }
+                case PlatformID.MacOSX:
+                {
+                    m_uiStrings = new Dictionary<string, string> {
+                        ["LocateShenzhenFolder"] = "Locate the SHENZHEN I/O application:",
+                        ["LocateShenzhenFolderWithHint"] = @"Please locate your SHENZHEN I/O application. This will usually be in your Applications folder or in ~/Library/Application Support/Steam/SteamApps/common/",
+                        ["SaveFilesHint"] = @"Your save files are normally located in: ~/Library/Application Support/SHENZHEN IO/",
+                    };
+
+                    m_getShenzhenSearchPaths = GetMacSearchPaths;
+                    break;
+                }
+                default:
+                    throw new Exception("Unsupported platform: " + Environment.OSVersion.Platform);
+            }
         }
 
-        public static string FindShenzhenSteamDirectory()
+        public string GetUIString(string token)
+        {
+            return m_uiStrings.TryGetValue(token, out string uiString) ? uiString : $"<Unknown token '{token}'>";
+        }
+
+        public string FindShenzhenDirectory()
+        {
+            foreach (string dir in m_getShenzhenSearchPaths())
+            {
+                if (Directory.Exists(dir))
+                {
+                    sm_log.InfoFormat("Found SHENZHEN I/O directory: \"{0}\"", dir);
+                    return dir;
+                }
+                else
+                {
+                    sm_log.InfoFormat("Did not find SHENZHEN I/O directory: \"{0}\"", dir);
+                }
+            }
+
+            sm_log.WarnFormat("Could not find SHENZHEN I/O directory");
+            return null;
+        }
+
+        private IEnumerable<string> GetWindowsSearchPaths()
         {
             string steamPath = Registry.GetValue(@"HKEY_LOCAL_MACHINE\SOFTWARE\Valve\Steam", "InstallPath", null) as string;
             sm_log.InfoFormat("Steam install path: \"{0}\"", steamPath);
             if (steamPath != null)
             {
-                var shenzhenDir = Path.Combine(steamPath, @"steamapps\common\SHENZHEN IO");
-                if (Directory.Exists(shenzhenDir))
-                {
-                    sm_log.InfoFormat("Found SHENZHEN I/O directory: \"{0}\"", shenzhenDir);
-                    return shenzhenDir;
-                }
-                else
-                {
-                    sm_log.WarnFormat("Could not find SHENZHEN I/O directory: directory \"{0}\" does not exist", shenzhenDir);
-                }
+                yield return Path.Combine(steamPath, "steamapps", "common", "SHENZHEN IO");
             }
 
-            return null;
+            string gogPath = Registry.GetValue(@"HKEY_LOCAL_MACHINE\SOFTWARE\GOG.com\Games\1640205738", "PATH", null) as string;
+            sm_log.InfoFormat("GoG install path: \"{0}\"", gogPath);
+            if (gogPath != null)
+            {
+                yield return gogPath;
+            }
         }
 
-        public static string FindShenzhenGoGDirectory()
+        private IEnumerable<string> GetLinuxSearchPaths()
         {
-            string shenzhenDir = Registry.GetValue(@"HKEY_LOCAL_MACHINE\SOFTWARE\GOG.com\Games\1640205738", "PATH", null) as string;
-            sm_log.InfoFormat("GoG install path: \"{0}\"", shenzhenDir);
-            if (shenzhenDir != null)
-            {
-                if (Directory.Exists(shenzhenDir))
-                {
-                    sm_log.InfoFormat("Found SHENZHEN I/O directory: \"{0}\"", shenzhenDir);
-                    return shenzhenDir;
-                }
-                else
-                {
-                    sm_log.WarnFormat("Could not find SHENZHEN I/O directory: directory \"{0}\" does not exist", shenzhenDir);
-                }
-            }
+            yield return Path.Combine(Environment.GetEnvironmentVariable("HOME"), ".steam/steam/steamapps/common/SHENZHEN IO");
+        }
 
-            return null;
+        private IEnumerable<string> GetMacSearchPaths()
+        {
+            yield return $"~/Library/Application Support/Steam/SteamApps/common/SHENZHEN IO/Shenzhen IO/Shenzhen IO.app";
+            yield return $"~/Applications/Shenzhen IO.app";
+            yield return $"/Applications/Shenzhen IO.app";
         }
 
         public static string FindUnpatchedShenzhenExecutable(string shenzhenDir)
@@ -76,7 +129,7 @@ namespace ShenzhenMod
 
         private static string FindExecutableWithHash(string dir, string[] expectedHashes)
         {
-            foreach (string file in Directory.GetFiles(dir, "*.exe"))
+            foreach (string file in Directory.GetFiles(dir, "*.exe", SearchOption.AllDirectories))
             {
                 try
                 {

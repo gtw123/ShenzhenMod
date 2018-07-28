@@ -63,7 +63,7 @@ namespace ShenzhenMod.Patches
 
             void MakeNewTexture()
             {
-                string editorPath = Path.Combine(m_shenzhenDir, @"Content\textures\editor");
+                string editorPath = Path.Combine(m_shenzhenDir, "Content", "textures", "editor");
                 string panelTexturePath = Path.Combine(editorPath, "panel_sandbox.png");
                 using (var image = Image.FromFile(panelTexturePath))
                 {

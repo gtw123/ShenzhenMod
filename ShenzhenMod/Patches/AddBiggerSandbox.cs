@@ -219,7 +219,7 @@ namespace ShenzhenMod.Patches
         {
             using (var stream = System.Reflection.Assembly.GetCallingAssembly().GetManifestResourceStream("ShenzhenMod.Content.messages.en.bigger-prototyping-area.txt"))
             {
-                string path = Path.Combine(m_shenzhenDir, @"Content\messages.en\bigger-prototyping-area.txt");
+                string path = Path.Combine(m_shenzhenDir, "Content", "messages.en", "bigger-prototyping-area.txt");
                 using (var file = File.Create(path))
                 {
                     sm_log.InfoFormat("Writing resource file to \"{0}\"", path);
@@ -227,7 +227,7 @@ namespace ShenzhenMod.Patches
                 }
 
                 // Although we haven't got a Chinese version, we need to have a corresponding file in messages.zh to avoid a crash.
-                string path2 = Path.Combine(m_shenzhenDir, @"Content\messages.zh\bigger-prototyping-area.txt");
+                string path2 = Path.Combine(m_shenzhenDir, "Content", "messages.zh", "bigger-prototyping-area.txt");
                 sm_log.InfoFormat("Copying \"{0}\" to \"{1}\"", path, path2);
                 File.Copy(path, path2, overwrite: true);
             }
