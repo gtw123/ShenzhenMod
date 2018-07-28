@@ -9,7 +9,7 @@ A mod for [SHENZHEN I/O](http://www.zachtronics.com/shenzhen-io/).
 * (Experimental) Increases the maximum simulation speed for the first three test runs and in the sandbox.
   * Note: This feature can cause the game to crash, so it is not enabled by default. See below.
 
-Supports both the Steam and GoG versions of Shenzhen I/O. Currently supports Windows only.
+Supports both the Steam and GoG versions of SHENZHEN I/O. Currently supports Windows only.
 
 ## Installing
 
