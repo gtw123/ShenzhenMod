@@ -23,7 +23,6 @@ A mod for [SHENZHEN I/O](http://www.zachtronics.com/shenzhen-io/).
 ### Linux
 
 * First, back up your SHENZHEN I/O save files. This is **strongly** recommended as there is a risk that using this mod may corrupt your save files. Make a copy of `$HOME/.local/share/SHENZHEN IO/` and put it somewhere safe.
-* Install Mono if you don't already have it. Run `mono --version` to check. Version 5.0 or later is recommended.
 * Download and unzip the latest ShenzhenMod release from https://github.com/gtw123/ShenzhenMod/releases.
 * Run `mono ShenzhenMod.exe`
 * Follow the steps to install the mod.
