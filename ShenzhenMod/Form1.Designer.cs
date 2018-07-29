@@ -47,7 +47,6 @@
             this.m_exeFolderField.Font = new System.Drawing.Font("Segoe UI", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.m_exeFolderField.Location = new System.Drawing.Point(15, 173);
             this.m_exeFolderField.Name = "m_exeFolderField";
-            this.m_exeFolderField.ReadOnly = true;
             this.m_exeFolderField.Size = new System.Drawing.Size(605, 23);
             this.m_exeFolderField.TabIndex = 0;
             // 

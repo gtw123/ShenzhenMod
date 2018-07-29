@@ -7,10 +7,11 @@ namespace ShenzhenMod
     {
         private static readonly log4net.ILog sm_log = log4net.LogManager.GetLogger(typeof(Form1));
 
-        private ShenzhenLocator m_locator = new ShenzhenLocator();
+        private ShenzhenLocator m_locator;
 
-        public Form1()
+        public Form1(string platformName)
         {
+            m_locator = new ShenzhenLocator(platformName);
             InitializeComponent();
 
             this.label4.Text = m_locator.GetUIString("LocateShenzhenFolder");

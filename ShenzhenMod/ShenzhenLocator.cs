@@ -15,9 +15,17 @@ namespace ShenzhenMod
         private Dictionary<string, string> m_uiStrings;
         private Func<IEnumerable<string>> m_getShenzhenSearchPaths;
 
-        public ShenzhenLocator()
+        public ShenzhenLocator(string platformName)
         {
-            switch (Environment.OSVersion.Platform)
+            var platform = Environment.OSVersion.Platform;
+            if (platformName == "macos")
+            {
+                // Unfortunately Mono's version of Environment.OSVersion.Platform returns Unix on macOS, and there's no easy
+                // way to tell if we're on macOS. So we just rely on a command-line parameter for now.
+                platform = PlatformID.MacOSX;
+            }
+            
+            switch (platform)
             {
                 case PlatformID.Win32NT:
                 {
@@ -105,8 +113,7 @@ namespace ShenzhenMod
 
         private IEnumerable<string> GetMacSearchPaths()
         {
-            yield return $"~/Library/Application Support/Steam/SteamApps/common/SHENZHEN IO/Shenzhen IO/Shenzhen IO.app";
-            yield return $"~/Applications/Shenzhen IO.app";
+            yield return Path.Combine(Environment.GetEnvironmentVariable("HOME"), "Library/Application Support/Steam/SteamApps/common/SHENZHEN IO/Shenzhen IO.app");
             yield return $"/Applications/Shenzhen IO.app";
         }
 

@@ -13,14 +13,14 @@ namespace ShenzhenMod
         /// The main entry point for the application.
         /// </summary>
         [STAThread]
-        static void Main()
+        static void Main(string[] args)
         {
             sm_log.Info("---------------------------------------------------------------------------------------");
             sm_log.Info("Starting up");
 
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
-            Application.Run(new Form1());
+            Application.Run(new Form1(args.Length > 0 ? args[0] : null));
         }
     }
 }
