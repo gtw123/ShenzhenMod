@@ -2,9 +2,11 @@
 using System.Configuration;
 using System.Globalization;
 using System.IO;
+using System.Reflection;
 using Mono.Cecil;
 using ShenzhenMod.Patches;
 using static System.FormattableString;
+using ShenzhenMod.Patching;
 
 namespace ShenzhenMod
 {
@@ -63,8 +65,13 @@ namespace ShenzhenMod
         private void ApplyPatches(string unpatchedPath, string patchedPath)
         {
             sm_log.InfoFormat("Reading module \"{0}\"", unpatchedPath);
-            using (var module = ModuleDefinition.ReadModule(unpatchedPath))
+
+            using (var patcher = new Patcher(Assembly.GetExecutingAssembly(), unpatchedPath))
             {
+                patcher.InjectMembers();
+
+                var module = patcher.TargetModule;
+
                 sm_log.Info("Locating types");
                 var types = new ShenzhenTypes(module);
 

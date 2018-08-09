@@ -3,6 +3,7 @@ using System.Drawing.Drawing2D;
 using System.IO;
 using System.Linq;
 using Mono.Cecil.Cil;
+using ShenzhenMod.Patching;
 
 namespace ShenzhenMod.Patches
 {

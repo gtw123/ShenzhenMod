@@ -5,6 +5,8 @@ VisualStudioVersion = 15.0.27004.2005
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ShenzhenMod", "ShenzhenMod\ShenzhenMod.csproj", "{F54C1C3C-07DC-44F4-B799-7B3DBA6A5290}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ShenzhenMod.Patching", "Patching\ShenzhenMod.Patching.csproj", "{A388B4B7-DAA0-49A1-BC78-B7AC1CE0F6B7}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -15,6 +17,10 @@ Global
 		{F54C1C3C-07DC-44F4-B799-7B3DBA6A5290}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{F54C1C3C-07DC-44F4-B799-7B3DBA6A5290}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{F54C1C3C-07DC-44F4-B799-7B3DBA6A5290}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A388B4B7-DAA0-49A1-BC78-B7AC1CE0F6B7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A388B4B7-DAA0-49A1-BC78-B7AC1CE0F6B7}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A388B4B7-DAA0-49A1-BC78-B7AC1CE0F6B7}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A388B4B7-DAA0-49A1-BC78-B7AC1CE0F6B7}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

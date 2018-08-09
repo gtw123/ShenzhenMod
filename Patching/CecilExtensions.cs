@@ -6,7 +6,7 @@ using Mono.Cecil.Cil;
 using Mono.Cecil.Rocks;
 using static System.FormattableString;
 
-namespace ShenzhenMod
+namespace ShenzhenMod.Patching
 {
     public static class CecilExtensions
     {
@@ -87,9 +87,34 @@ namespace ShenzhenMod
             return instr.First();
         }
 
-        public static MethodReference MakeGeneric(this MethodReference method, params TypeReference[] arguments)
+        /// <summary>
+        /// Adds generic arguments to a method.
+        /// </summary>
+        public static MethodReference MakeGenericInstance(this MethodReference method, params TypeReference[] arguments)
         {
-            var reference = new MethodReference(method.Name, method.ReturnType, method.DeclaringType.MakeGenericInstanceType(arguments))
+            return CopyMethod(method, method.DeclaringType.MakeGenericInstanceType(arguments));
+        }
+
+        /// <summary>
+        /// Removes generic arguments from a method, making it into an "open" method.
+        /// </summary>
+        public static MethodReference RemoveGenericArguments(this MethodReference method)
+        {
+            var declaringType = method.DeclaringType;
+            if (declaringType is GenericInstanceType genericType)
+            {
+                declaringType = genericType.ElementType;
+            }
+
+            return CopyMethod(method, declaringType);
+        }
+
+        /// <summary>
+        /// Creates a copy of a method using a different declaring type.
+        /// </summary>
+        private static MethodReference CopyMethod(this MethodReference method, TypeReference declaringType)
+        {
+            var reference = new MethodReference(method.Name, method.ReturnType, declaringType)
             {
                 HasThis = method.HasThis,
                 ExplicitThis = method.ExplicitThis,
@@ -98,7 +123,7 @@ namespace ShenzhenMod
 
             foreach (var parameter in method.Parameters)
             {
-                reference.Parameters.Add(new ParameterDefinition(parameter.ParameterType));
+                reference.Parameters.Add(new ParameterDefinition(parameter.Name, parameter.Attributes, parameter.ParameterType));
             }
 
             foreach (var genericParameter in method.GenericParameters)

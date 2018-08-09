@@ -3,6 +3,7 @@ using System.IO;
 using System.Linq;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
+using ShenzhenMod.Patching;
 
 namespace ShenzhenMod.Patches
 {

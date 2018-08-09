@@ -1,6 +1,7 @@
 ﻿using System.Linq;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
+using ShenzhenMod.Patching;
 
 namespace ShenzhenMod
 {
@@ -125,12 +126,12 @@ namespace ShenzhenMod
 
             public MethodReference HasValue(TypeReference typeParam)
             {
-                return m_hasValue.MakeGeneric(typeParam);
+                return m_hasValue.MakeGenericInstance(typeParam);
             }
 
             public MethodReference GetValue(TypeReference typeParam)
             {
-                return m_getValue.MakeGeneric(typeParam);
+                return m_getValue.MakeGenericInstance(typeParam);
             }
 
             public OptionalType(ModuleDefinition module)

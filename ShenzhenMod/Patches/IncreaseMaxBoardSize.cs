@@ -2,6 +2,7 @@
 using Mono.Cecil;
 using Mono.Cecil.Cil;
 using Mono.Cecil.Rocks;
+using ShenzhenMod.Patching;
 
 namespace ShenzhenMod.Patches
 {

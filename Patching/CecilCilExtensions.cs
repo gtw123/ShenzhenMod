@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using Mono.Cecil.Cil;
 using static System.FormattableString;
 
-namespace ShenzhenMod
+namespace ShenzhenMod.Patching
 {
     public static class CecilCilExtensions
     {
