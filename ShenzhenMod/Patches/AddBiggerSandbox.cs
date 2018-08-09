@@ -14,11 +14,13 @@ namespace ShenzhenMod.Patches
     {
         private static readonly log4net.ILog sm_log = log4net.LogManager.GetLogger(typeof(AddBiggerSandbox));
 
+        private Patcher m_patcher;
         private ShenzhenTypes m_types;
         private string m_shenzhenDir;
 
-        public AddBiggerSandbox(ShenzhenTypes types, string shenzhenDir)
+        public AddBiggerSandbox(Patcher patcher, ShenzhenTypes types, string shenzhenDir)
         {
+            m_patcher = patcher;
             m_types = types;
             m_shenzhenDir = shenzhenDir;
         }
@@ -40,9 +42,8 @@ namespace ShenzhenMod.Patches
             const int WIDTH = 44;
             const int HEIGHT = 28;
 
-            // Add the static field for the new puzzle
-            var sandbox2Field = new FieldDefinition("Sandbox2", FieldAttributes.Static | FieldAttributes.InitOnly, m_types.Puzzle.Type);
-            m_types.Puzzles.Type.Fields.Add(sandbox2Field);
+            // Get the static field for the new puzzle
+            var sandbox2Field = m_patcher.MemberMap.GetTargetField("ShenzhenIO.Puzzles", "Sandbox2");
 
             // Add the method that creates the puzzle
             var createSandbox2 = AddCreateSandbox2();
@@ -176,44 +177,11 @@ namespace ShenzhenMod.Patches
         /// </summary>
         private void AddSandbox2MessageThread()
         {
-            var method = m_types.MessageThreads.CreateAllThreads;
+            var method = m_patcher.MemberMap.GetTargetMethod("ShenzhenIO.MessageThreads", "CreateAllThreads");
             var il = method.Body.GetILProcessor();
 
-            // Increase the length of the messageThreads array by one
-            const int NUM_THREADS = 76;
-            method.FindInstruction(OpCodes.Ldc_I4_S, (sbyte)NUM_THREADS).Operand = (sbyte)(NUM_THREADS + 1);
-
-            // We want to insert our new puzzle just after the existing sandbox, so shuffle the
-            // later message threads forward by one.
-            const int INSERT_INDEX = 18;
-            var endThreads = method.FindInstruction(OpCodes.Stsfld, m_types.MessageThreads.AllThreads).Next;
-
-            // Array.Copy(AllThreads, INSERT_INDEX, AllThreads, INSERT_INDEX + 1, NUM_THREADS - INSERT_INDEX);
-            il.InsertBefore(endThreads,
-                il.Create(OpCodes.Ldsfld, m_types.MessageThreads.AllThreads),
-                il.Create(OpCodes.Ldc_I4_S, (sbyte)INSERT_INDEX),
-                il.Create(OpCodes.Ldsfld, m_types.MessageThreads.AllThreads),
-                il.Create(OpCodes.Ldc_I4_S, (sbyte)(INSERT_INDEX + 1)),
-                il.Create(OpCodes.Ldc_I4_S, (sbyte)(NUM_THREADS - INSERT_INDEX)),
-                il.Create(OpCodes.Call, m_types.Module.ImportReference(typeof(Array).GetMethod("Copy", new[] { typeof(Array), typeof(int), typeof(Array), typeof(int), typeof(int) }))));
-
-            // Now create our new message thread
-            // AllThreads[INSERT_INDEX] = CreateThread((Location)0 /* Longteng Co. Ltd. */, /* stage unlocked at */ 6, "bigger-prototyping-area", Puzzles.Sandbox2, L.GetString("Bigger Prototyping Area", ""), (Enum2)2, 4, null);
-            il.InsertBefore(endThreads,
-                il.Create(OpCodes.Ldsfld, m_types.MessageThreads.AllThreads),
-                il.Create(OpCodes.Ldc_I4_S, (sbyte)INSERT_INDEX),
-                il.Create(OpCodes.Ldc_I4_0),
-                il.Create(OpCodes.Ldc_I4_6),
-                il.Create(OpCodes.Ldstr, "bigger-prototyping-area"),    // Name of the messages file containing the email thread (also used to name the solution files on disk)
-                il.Create(OpCodes.Ldsfld, m_types.Puzzles.Type.FindField("Sandbox2")),
-                il.Create(OpCodes.Ldstr, "Bigger Prototyping Area"),    // Name of the puzzle shown in the game
-                il.Create(OpCodes.Ldstr, ""),
-                il.Create(OpCodes.Call, m_types.L.GetString),
-                il.Create(OpCodes.Ldc_I4_2),
-                il.Create(OpCodes.Ldc_I4_4),
-                il.Create(OpCodes.Ldnull),
-                il.Create(OpCodes.Call, m_types.MessageThreads.CreateThread),
-                il.Create(OpCodes.Stelem_Ref));
+            var endThreads = method.FindInstruction(OpCodes.Stsfld, m_patcher.MemberMap.GetTargetField("ShenzhenIO.MessageThreads", "AllThreads")).Next;
+            il.InsertBefore(endThreads, il.Create(OpCodes.Call, m_patcher.MemberMap.GetTargetMethod("ShenzhenIO.MessageThreads", "AddBiggerSandboxThread")));
         }
 
         private void CopyMessagesFile()

@@ -78,7 +78,7 @@ namespace ShenzhenMod
                 sm_log.Info("Applying patches");
                 string exeDir = Path.GetDirectoryName(unpatchedPath);
                 new IncreaseMaxBoardSize(types).Apply();
-                new AddBiggerSandbox(types, exeDir).Apply();
+                new AddBiggerSandbox(patcher, types, exeDir).Apply();
                 new AdjustPlaybackSpeedSlider(types, exeDir).Apply();
 
                 if (bool.TryParse(ConfigurationManager.AppSettings["IncreaseMaxSpeed"], out bool increaseMaxSpeed) && increaseMaxSpeed)
