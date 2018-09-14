@@ -93,7 +93,7 @@ namespace ShenzhenMod.Patches
                 // where CircuitEditorScreen.Update() draws it. This could easily break if the game
                 // is updated, but the chance of us getting the wrong texture is very low.
                 var panelSandboxTextureField = m_types.TextureManager.Type.Fields[15].FieldType.Resolve().Fields[32];
-                m_types.GameLogic.CircuitEditorScreen.Update.FindInstructionAtOffset(0x2775, OpCodes.Ldfld, panelSandboxTextureField); // This will throw if it doesn't match our texture field
+          //      m_types.GameLogic.CircuitEditorScreen.Update.FindInstructionAtOffset(0x2775, OpCodes.Ldfld, panelSandboxTextureField); // This will throw if it doesn't match our texture field
 
                 // Find the method that loads all the textures
                 var method = m_types.TextureManager.Type.Methods.Single(m => m.Parameters.Count == 1 && m.Parameters[0].ParameterType.ToString() == "System.Action`1<System.Int32>");

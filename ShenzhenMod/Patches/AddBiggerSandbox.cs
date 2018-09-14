@@ -206,8 +206,8 @@ namespace ShenzhenMod.Patches
                 il.Create(OpCodes.Ldstr, "bigger-prototyping-area"),    // Name of the messages file containing the email thread (also used to name the solution files on disk)
                 il.Create(OpCodes.Ldsfld, m_types.Puzzles.Type.FindField("Sandbox2")),
                 il.Create(OpCodes.Ldstr, "Bigger Prototyping Area"),    // Name of the puzzle shown in the game
-                il.Create(OpCodes.Ldstr, ""),
-                il.Create(OpCodes.Call, m_types.L.GetString),
+                //il.Create(OpCodes.Ldstr, ""),
+                //il.Create(OpCodes.Call, m_types.L.GetString),
                 il.Create(OpCodes.Ldc_I4_2),
                 il.Create(OpCodes.Ldc_I4_4),
                 il.Create(OpCodes.Ldnull),
@@ -219,7 +219,7 @@ namespace ShenzhenMod.Patches
         {
             using (var stream = System.Reflection.Assembly.GetCallingAssembly().GetManifestResourceStream("ShenzhenMod.Content.messages.en.bigger-prototyping-area.txt"))
             {
-                string path = Path.Combine(m_shenzhenDir, "Content", "messages.en", "bigger-prototyping-area.txt");
+                string path = Path.Combine(m_shenzhenDir, "Content", "messages", "bigger-prototyping-area.txt");
                 using (var file = File.Create(path))
                 {
                     sm_log.InfoFormat("Writing resource file to \"{0}\"", path);
@@ -227,9 +227,9 @@ namespace ShenzhenMod.Patches
                 }
 
                 // Although we haven't got a Chinese version, we need to have a corresponding file in messages.zh to avoid a crash.
-                string path2 = Path.Combine(m_shenzhenDir, "Content", "messages.zh", "bigger-prototyping-area.txt");
-                sm_log.InfoFormat("Copying \"{0}\" to \"{1}\"", path, path2);
-                File.Copy(path, path2, overwrite: true);
+            //    string path2 = Path.Combine(m_shenzhenDir, "Content", "messages.zh", "bigger-prototyping-area.txt");
+            //    sm_log.InfoFormat("Copying \"{0}\" to \"{1}\"", path, path2);
+            //    File.Copy(path, path2, overwrite: true);
             }
         }
     }

@@ -108,7 +108,7 @@ namespace ShenzhenMod
             {
                 Type = module.FindType("MessageThreads");
                 ClassConstructor = Type.FindMethod(".cctor");
-                CreateAllThreads = Type.Methods.Single(m => m.IsPublic && m.IsStatic && m.Body.Variables.Count == 2
+                CreateAllThreads = Type.Methods.Single(m => m.IsPublic && m.IsStatic && m.Body.Variables.Count == 3
                     && m.Body.Variables[0].VariableType == module.FindType("MessageThread"));
                 CreateThread = Type.Methods.Single(m => m.IsPrivate && m.IsStatic && m.Parameters.Count == 8);
                 AllThreads = Type.Fields.Single(f => f.FieldType.IsArray && f.FieldType.GetElementType() == module.FindType("MessageThread"));
@@ -240,7 +240,7 @@ namespace ShenzhenMod
         public readonly GameLogicType GameLogic;
         public readonly GlobalsType Globals;
         public readonly Index2Type Index2;
-        public readonly LType L;
+      //  public readonly LType L;
         public readonly MessageThreadType MessageThread;
         public readonly MessageThreadsType MessageThreads;
         public readonly OptionalType Optional;
@@ -259,7 +259,7 @@ namespace ShenzhenMod
             GameLogic = new GameLogicType(module);
             Globals = new GlobalsType(module);
             Index2 = new Index2Type(module);
-            L = new LType(module);
+            //L = new LType(module);
             MessageThread = new MessageThreadType(module);
             MessageThreads = new MessageThreadsType(module);
             Optional = new OptionalType(module);
