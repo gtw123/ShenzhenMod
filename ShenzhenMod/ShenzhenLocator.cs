@@ -1,9 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using System.Security.Cryptography;
 using System.IO;
 using Microsoft.Win32;
+using Newtonsoft.Json.Linq;
 using static System.FormattableString;
 
 namespace ShenzhenMod
@@ -24,42 +26,45 @@ namespace ShenzhenMod
                 // way to tell if we're on macOS. So we just rely on a command-line parameter for now.
                 platform = PlatformID.MacOSX;
             }
-            
+
             switch (platform)
             {
                 case PlatformID.Win32NT:
-                {
-                    m_uiStrings = new Dictionary<string, string> {
-                        ["LocateShenzhenFolder"] = "Locate your SHENZHEN I/O installation folder:",
-                        ["LocateShenzhenFolderWithHint"] = @"Please locate your SHENZHEN I/O installation folder. This will usually be  C:\Program Files (x86)\Steam\steamapps\common\SHENZHEN IO",
-                        ["SaveFilesHint"] = @"Your save files are normally located in: My Documents\My Games\SHENZHEN IO\",
-                    };
+                    {
+                        m_uiStrings = new Dictionary<string, string>
+                        {
+                            ["LocateShenzhenFolder"] = "Locate your SHENZHEN I/O installation folder:",
+                            ["LocateShenzhenFolderWithHint"] = @"Please locate your SHENZHEN I/O installation folder. This will usually be  C:\Program Files (x86)\Steam\steamapps\common\SHENZHEN IO",
+                            ["SaveFilesHint"] = @"Your save files are normally located in: My Documents\My Games\SHENZHEN IO\",
+                        };
 
-                    m_getShenzhenSearchPaths = GetWindowsSearchPaths;
-                    break;
-                }
+                        m_getShenzhenSearchPaths = GetWindowsSearchPaths;
+                        break;
+                    }
                 case PlatformID.Unix:
-                {
-                    m_uiStrings = new Dictionary<string, string> {
-                        ["LocateShenzhenFolder"] = "Locate your SHENZHEN I/O installation directory:",
-                        ["LocateShenzhenFolderWithHint"] = @"Please locate your SHENZHEN I/O installation directory. This will usually be $HOME/.steam/steam/steamapps/common/SHENZHEN IO/",
-                        ["SaveFilesHint"] = @"Your save files are normally located in: $HOME/.local/share/SHENZHEN IO",
-                    };
+                    {
+                        m_uiStrings = new Dictionary<string, string>
+                        {
+                            ["LocateShenzhenFolder"] = "Locate your SHENZHEN I/O installation directory:",
+                            ["LocateShenzhenFolderWithHint"] = @"Please locate your SHENZHEN I/O installation directory. This will usually be $HOME/.steam/steam/steamapps/common/SHENZHEN IO/",
+                            ["SaveFilesHint"] = @"Your save files are normally located in: $HOME/.local/share/SHENZHEN IO",
+                        };
 
-                    m_getShenzhenSearchPaths = GetLinuxSearchPaths;
-                    break;
-                }
+                        m_getShenzhenSearchPaths = GetLinuxSearchPaths;
+                        break;
+                    }
                 case PlatformID.MacOSX:
-                {
-                    m_uiStrings = new Dictionary<string, string> {
-                        ["LocateShenzhenFolder"] = "Locate the SHENZHEN I/O application:",
-                        ["LocateShenzhenFolderWithHint"] = @"Please locate your SHENZHEN I/O application. This will usually be in your Applications folder or in ~/Library/Application Support/Steam/SteamApps/common/",
-                        ["SaveFilesHint"] = @"Your save files are normally located in: ~/Library/Application Support/SHENZHEN IO/",
-                    };
+                    {
+                        m_uiStrings = new Dictionary<string, string>
+                        {
+                            ["LocateShenzhenFolder"] = "Locate the SHENZHEN I/O application:",
+                            ["LocateShenzhenFolderWithHint"] = @"Please locate your SHENZHEN I/O application. This will usually be in your Applications folder or in ~/Library/Application Support/Steam/SteamApps/common/",
+                            ["SaveFilesHint"] = @"Your save files are normally located in: ~/Library/Application Support/SHENZHEN IO/",
+                        };
 
-                    m_getShenzhenSearchPaths = GetMacSearchPaths;
-                    break;
-                }
+                        m_getShenzhenSearchPaths = GetMacSearchPaths;
+                        break;
+                    }
                 default:
                     throw new Exception("Unsupported platform: " + Environment.OSVersion.Platform);
             }
@@ -119,11 +124,28 @@ namespace ShenzhenMod
 
         public static string FindUnpatchedShenzhenExecutable(string shenzhenDir)
         {
+            sm_log.InfoFormat("Fetching the latest list of unpatched hashes");
+
+            WebRequest webRequest = WebRequest.Create("https://github.com/gtw123/ShenzhenMod/blob/master/hashes.json");
+            WebResponse response = webRequest.GetResponse();
+
+            if (((HttpWebResponse)response).StatusDescription != "OK")
+            {
+                throw new Exception(Invariant($"Cannot fetch hash list. Response: \"{((HttpWebResponse)response).StatusDescription}\""));
+            }
+
+            string[] unpatchedHashes;
+
+            using (Stream data = response.GetResponseStream())
+            {
+                StreamReader reader = new StreamReader(data);
+                string json = reader.ReadToEnd();
+                unpatchedHashes = JArray.Parse(json).ToObject<string[]>();
+            }
+
+            response.Close();
+
             sm_log.InfoFormat("Looking for unpatched SHENZHEN I/O executable in \"{0}\"", shenzhenDir);
-            var unpatchedHashes = new[] {
-                "1D-65-40-5A-63-82-77-4F-2E-99-F2-00-B0-59-9B-4D-B3-71-2B-1B-C1-01-8A-4B-D6-02-C4-7A-8B-11-DB-E8",  // Steam
-                "02-DB-AC-A8-8C-27-4E-A2-8F-A2-7E-D5-92-72-08-9C-F7-5A-DB-B7-5A-88-64-B9-54-05-55-51-7F-6D-56-F6"   // GoG
-            };
             string path = FindExecutableWithHash(shenzhenDir, unpatchedHashes);
             if (path == null)
             {
