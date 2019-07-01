@@ -126,7 +126,7 @@ namespace ShenzhenMod
         {
             sm_log.InfoFormat("Fetching the latest list of unpatched hashes");
 
-            WebRequest webRequest = WebRequest.Create("https://github.com/gtw123/ShenzhenMod/blob/master/hashes.json");
+            WebRequest webRequest = WebRequest.Create("https://raw.githubusercontent.com/gtw123/ShenzhenMod/master/hashes.json");
             WebResponse response = webRequest.GetResponse();
 
             if (((HttpWebResponse)response).StatusDescription != "OK")
