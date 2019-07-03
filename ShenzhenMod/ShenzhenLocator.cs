@@ -126,16 +126,14 @@ namespace ShenzhenMod
         {
             sm_log.InfoFormat("Fetching the latest list of unpatched hashes");
 
-            WebRequest webRequest = WebRequest.Create("https://raw.githubusercontent.com/gtw123/ShenzhenMod/master/hashes.json");
-            WebResponse response = webRequest.GetResponse();
+            //WebRequest webRequest = WebRequest.Create("https://raw.githubusercontent.com/gtw123/ShenzhenMod/master/hashes.json");
+            WebRequest webRequest = WebRequest.Create("https://pastebin.com/raw/2aTZhpep");
+            WebResponse response;
 
-            if (((HttpWebResponse)response).StatusDescription != "OK")
-            {
-                throw new Exception(Invariant($"Cannot fetch hash list. Response: \"{((HttpWebResponse)response).StatusDescription}\""));
-            }
+            try { response = webRequest.GetResponse(); }
+            catch(Exception e) { throw new AggregateException("\n\nAn error occurred fetching the hash list. Please try again.\n\n", e); }
 
             string[] unpatchedHashes;
-
             using (Stream data = response.GetResponseStream())
             {
                 StreamReader reader = new StreamReader(data);
