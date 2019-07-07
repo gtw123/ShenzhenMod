@@ -4,3 +4,5 @@ Release/
 Bin/
 Obj/
 packages/
+/temp/
+/output/

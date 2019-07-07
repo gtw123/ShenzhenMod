@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- This script creates the zip file for a release of ShenzhenMod. -->
+<Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+    <Import Project="$(MSBuildThisFileDirectory)\packages\MSBuildTasks.1.5.0.235\build\MSBuildTasks.targets" />
+    
+    <!-- Gets the file version of a file on disk. -->
+    <UsingTask TaskName="GetFileVersion" TaskFactory="CodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.Core.dll">
+        <ParameterGroup>
+            <AssemblyPath ParameterType="System.String" Required="true" />
+            <Version ParameterType="System.String" Output="true" />
+        </ParameterGroup>
+        <Task>
+            <Using Namespace="System.Diagnostics" />
+            <Code Type="Fragment" Language="cs">
+                <![CDATA[
+                    var version = FileVersionInfo.GetVersionInfo(this.AssemblyPath);
+                    // We only want the first three components of the version
+                    this.Version = version.FileMajorPart + "." + version.FileMinorPart + "." + version.FileBuildPart;
+                ]]>
+            </Code>
+        </Task>
+    </UsingTask>
+
+    <PropertyGroup>
+        <WorkingDir>$(MSBuildThisFileDirectory)temp</WorkingDir>
+        <OutputDir>$(MSBuildThisFileDirectory)output</OutputDir>
+    </PropertyGroup>
+
+    <Target Name="Build">
+        <!-- Make sure there are no leftover files from a previous build -->
+        <RemoveDir Directories="$(WorkingDir)" />
+
+        <!-- Get the verison of our main assembly - we'll use this in the name of the zip file -->
+        <GetFileVersion AssemblyPath="$(MSBuildThisFileDirectory)\bin\Release\ShenzhenMod.exe">
+            <Output PropertyName="AssemblyVersion" TaskParameter="Version" />
+        </GetFileVersion>
+        <PropertyGroup>
+            <BuildDir>$(WorkingDir)\ShenzhenMod-$(AssemblyVersion)</BuildDir>
+        </PropertyGroup>
+
+        <!-- Copy the files into the correct directory structure first -->
+        <ItemGroup>
+            <FilesToCopy Include="$(MSBuildThisFileDirectory)\README.md" />
+            <FilesToCopy Include="$(MSBuildThisFileDirectory)\LICENSE.txt" />
+            <FilesToCopy Include="$(MSBuildThisFileDirectory)\bin\Release\*.dll" />
+            <FilesToCopy Include="$(MSBuildThisFileDirectory)\bin\Release\*.exe" />
+            <FilesToCopy Include="$(MSBuildThisFileDirectory)\bin\Release\*.config" />
+        </ItemGroup>
+        <Copy SourceFiles="@(FilesToCopy)" DestinationFolder="$(BuildDir)" />
+
+        <ItemGroup>
+            <LicenseFiles Include="$(MSBuildThisFileDirectory)\ThirdParty\Licenses\**" />
+        </ItemGroup>
+        <Copy SourceFiles="@(LicenseFiles)" DestinationFiles="@(LicenseFiles -> '$(BuildDir)\Licenses\%(RecursiveDir)%(Filename)%(Extension)')" />
+        <Copy SourceFiles="$(MSBuildThisFileDirectory)\packages\Newtonsoft.Json.12.0.2\License.md" DestinationFolder="$(BuildDir)\Licenses\Newtonsoft.Json" />
+
+        <!-- Zip the files from our temp directory -->
+        <ItemGroup>
+            <FilesToZip Include="$(WorkingDir)\**" />
+        </ItemGroup>
+        <Zip Files="@(FilesToZip)" ZipFileName="$(OutputDir)\ShenzhenMod-$(AssemblyVersion).zip" WorkingDirectory="$(WorkingDir)" />       
+    </Target>
+</Project>

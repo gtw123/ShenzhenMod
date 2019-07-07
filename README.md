@@ -81,6 +81,17 @@ To enable it:
 * Build using `msbuild`
 * Launch it via `mono32 bin/Debug/ShenzhenMod.exe macos`
 
+## Releasing a new version
+
+* Make sure you've built the solution in release.
+* Make sure you've updated the version number in `AssemblyInfo.cs`.
+* (Windows) Open a developer command prompt.
+* Run `msbuild build-release.targets`.
+* The zip file will be in the `outputs` directory.
+* Test the zip file.
+* Upload to GitHub.
+* Tag the release.
+
 ## Credits
 
 The following people have helped develop this mod, either directly or indirectly:
