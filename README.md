@@ -68,6 +68,7 @@ To enable it:
 * Clone or download the repo from https://github.com/gtw123/ShenzhenMod
 * Install `mono-devel`, version 5.0 or later.
 * Open the ShenzhenMod folder.
+* Run `nuget restore` to download the dependencies.
 * Build using `msbuild`
 * Launch it via `mono bin/Debug/ShenzhenMod.exe`
 
@@ -76,5 +77,15 @@ To enable it:
 * Clone or download the repo from https://github.com/gtw123/ShenzhenMod
 * Download and install Mono from http://www.mono-project.com/download/stable/. Version 5.10.1 or later is recommended.
 * Open a Terminal Window and `cd` into the ShenzhenMod folder.
+* Run `nuget restore` to download the dependencies.
 * Build using `msbuild`
 * Launch it via `mono32 bin/Debug/ShenzhenMod.exe macos`
+
+## Credits
+
+The following people have helped develop this mod, either directly or indirectly:
+* gtw123
+* 12345ieee
+* pseudonym404
+* csaboka
+* mathiscode
