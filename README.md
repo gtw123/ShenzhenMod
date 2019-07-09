@@ -87,7 +87,7 @@ To enable it:
 * Make sure you've updated the version number in `AssemblyInfo.cs`.
 * (Windows) Open a developer command prompt.
 * Run `msbuild build-release.targets`.
-* The zip file will be in the `outputs` directory.
+* The zip file will be in the `output` directory.
 * Test the zip file.
 * Upload to GitHub.
 * Tag the release.
