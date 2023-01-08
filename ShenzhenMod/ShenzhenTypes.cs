@@ -6,6 +6,16 @@ namespace ShenzhenMod
 {
     public class ShenzhenTypes
     {
+        public class ChipType
+        {
+            public readonly TypeDefinition Type;
+
+            public ChipType(ModuleDefinition module)
+            {
+                Type = module.FindType("Chip");
+            }
+        }
+
         public class CircuitEditorScreenType
         {
             public readonly TypeDefinition Type;
@@ -237,6 +247,7 @@ namespace ShenzhenMod
         public readonly ModuleDefinition Module;
         public readonly TypeSystem BuiltIn;
 
+        public readonly ChipType Chip;
         public readonly GameLogicType GameLogic;
         public readonly GlobalsType Globals;
         public readonly Index2Type Index2;
@@ -256,6 +267,7 @@ namespace ShenzhenMod
             Module = module;
             BuiltIn = module.TypeSystem;
 
+            Chip = new ChipType(module);
             GameLogic = new GameLogicType(module);
             Globals = new GlobalsType(module);
             Index2 = new Index2Type(module);

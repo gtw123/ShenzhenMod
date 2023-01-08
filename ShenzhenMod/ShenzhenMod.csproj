@@ -72,6 +72,7 @@
     <Compile Include="Patches\IncreaseMaxSpeed.cs" />
     <Compile Include="Patches\IncreaseMaxBoardSize.cs" />
     <Compile Include="Patches\AddBiggerSandbox.cs" />
+    <Compile Include="Patches\LazySort.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="ShenzhenLocator.cs" />
